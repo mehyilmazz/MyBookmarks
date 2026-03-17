@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "MyBookmark - Daha Sonra Kontrol Et",
+  "description": "Twitter/X ve YouTube içeriklerini tek tıkla kaydet, daha sonra kontrol et. Lokal, hızlı, sade.",
+  "version": "1.0.0",
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "contextMenus",
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "https://twitter.com/*",
+    "https://x.com/*",
+    "https://www.youtube.com/*",
+    "https://m.youtube.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "MyBookmark",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "options_ui": {
+    "page": "bookmarks.html",
+    "open_in_tab": true
+  }
+}

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>MyBookmark – İkon Oluşturucu</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      padding: 32px;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    p  { color: #7d8590; margin-bottom: 16px; line-height: 1.6; font-size: 14px; }
+    code {
+      background: #21262d;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .btn {
+      display: inline-block;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #4f46e5; }
+    .preview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+    }
+    .preview-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .preview-item canvas {
+      border: 1px solid #30363d;
+      border-radius: 8px;
+    }
+    .preview-item span {
+      font-size: 11px;
+      color: #7d8590;
+    }
+    .status {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #3fb950;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🔖 MyBookmark – İkon Oluşturucu</h1>
+<p>
+  Bu sayfa, eklenti için gereken 4 farklı boyuttaki PNG ikonunu oluşturur ve indirir.<br>
+  Aşağıdaki butona tıklayın → 4 PNG dosyası indirilecek → onları <code>icons/</code> klasörüne taşıyın.
+</p>
+
+<button class="btn" onclick="generateAll()">İkonları Oluştur ve İndir</button>
+
+<div class="preview" id="preview"></div>
+<div class="status" id="status"></div>
+
+<script>
+  /**
+   * Verilen boyutta bir MyBookmark ikonu çizer ve canvas döner.
+   * @param {number} size - Piksel boyutu (16, 32, 48, 128)
+   * @returns {HTMLCanvasElement}
+   */
+  function drawIcon(size) {
+    const canvas = document.createElement('canvas');
+    canvas.width  = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // ── Arka Plan (koyu, yuvarlak köşeli) ──────────────────────
+    const radius = size * 0.18;
+    ctx.fillStyle = '#0d1117';
+    roundRect(ctx, 0, 0, size, size, radius);
+    ctx.fill();
+
+    // ── Bookmark Kurdele Şekli ──────────────────────────────────
+    const padX      = size * 0.22;
+    const padY      = size * 0.14;
+    const bW        = size - padX * 2;         // genişlik
+    const bH        = size * 0.68;             // yükseklik
+    const bX        = padX;
+    const bY        = padY;
+    const notch     = bH * 0.175;              // alt V çentik derinliği
+
+    ctx.beginPath();
+    ctx.moveTo(bX, bY);
+    ctx.lineTo(bX + bW, bY);
+    ctx.lineTo(bX + bW, bY + bH);
+    ctx.lineTo(bX + bW / 2, bY + bH - notch);
+    ctx.lineTo(bX, bY + bH);
+    ctx.closePath();
+
+    // Gradient: parlak mor → daha koyu mor
+    const grad = ctx.createLinearGradient(bX, bY, bX, bY + bH);
+    grad.addColorStop(0, '#818cf8');   // indigo-400
+    grad.addColorStop(1, '#4f46e5');   // indigo-600
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // ── Hafif Parlama (üst sol köşe) ────────────────────────────
+    const shine = ctx.createLinearGradient(bX, bY, bX + bW * 0.5, bY + bH * 0.4);
+    shine.addColorStop(0, 'rgba(255,255,255,0.18)');
+    shine.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.beginPath();
+    ctx.moveTo(bX, bY);
+    ctx.lineTo(bX + bW, bY);
+    ctx.lineTo(bX + bW, bY + bH * 0.4);
+    ctx.lineTo(bX, bY + bH * 0.4);
+    ctx.closePath();
+    ctx.fillStyle = shine;
+    ctx.fill();
+
+    return canvas;
+  }
+
+  /**
+   * Yuvarlak köşeli dikdörtgen path çizer.
+   */
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y,     x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x,     y + h, r);
+    ctx.arcTo(x,     y + h, x,     y,     r);
+    ctx.arcTo(x,     y,     x + w, y,     r);
+    ctx.closePath();
+  }
+
+  /**
+   * Canvas içeriğini PNG olarak indirir.
+   * @param {HTMLCanvasElement} canvas
+   * @param {string} filename
+   */
+  function downloadCanvas(canvas, filename) {
+    const link    = document.createElement('a');
+    link.download = filename;
+    link.href     = canvas.toDataURL('image/png');
+    link.click();
+  }
+
+  /**
+   * Tüm ikon boyutlarını oluşturur, önizleme gösterir ve indirir.
+   */
+  function generateAll() {
+    const sizes   = [16, 32, 48, 128];
+    const preview = document.getElementById('preview');
+    const status  = document.getElementById('status');
+
+    preview.innerHTML = '';
+    status.textContent = '';
+
+    sizes.forEach((size, idx) => {
+      const canvas  = drawIcon(size);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'preview-item';
+
+      const label = document.createElement('span');
+      label.textContent = `${size}×${size}`;
+
+      wrapper.appendChild(canvas);
+      wrapper.appendChild(label);
+      preview.appendChild(wrapper);
+
+      // Her indirme arasına küçük gecikme koy (bazı tarayıcılar hepsini engelleyebilir)
+      setTimeout(() => {
+        downloadCanvas(canvas, `icon${size}.png`);
+      }, idx * 300);
+    });
+
+    status.textContent = '✓ 4 ikon oluşturuldu. Dosyalar indiriliyor… İndirilen PNG\'leri icons/ klasörüne taşıyın.';
+  }
+
+  // Sayfa yüklendiğinde önizlemeyi göster (indirme olmadan)
+  window.addEventListener('DOMContentLoaded', () => {
+    const sizes   = [16, 32, 48, 128];
+    const preview = document.getElementById('preview');
+    sizes.forEach(size => {
+      const canvas  = drawIcon(size);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'preview-item';
+      const label = document.createElement('span');
+      label.textContent = `${size}×${size}`;
+      wrapper.appendChild(canvas);
+      wrapper.appendChild(label);
+      preview.appendChild(wrapper);
+    });
+  });
+</script>
+</body>
+</html>

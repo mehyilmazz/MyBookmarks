@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyBookmark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css?v=8">
+</head>
+<body>
+
+  <!-- ─── Header ──────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 20 20" fill="currentColor">
+          <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+        </svg>
+      </div>
+      <span class="brand-name">MyBookmark</span>
+    </div>
+    <div class="header-actions">
+      <button id="btn-archive" class="hbtn" title="Tüm kayıtları tam sayfada görüntüle">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Arşiv
+      </button>
+    </div>
+  </header>
+
+  <!-- ─── Kaydet Butonu ────────────────────────────────────────────── -->
+  <div class="save-section">
+    <button id="btn-save" class="btn-save">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+      Bu sayfayı kaydet
+    </button>
+  </div>
+
+  <!-- Gizli JS uyumluluk elementleri — getFiltered() için -->
+  <select id="platform-filter" style="display:none" aria-hidden="true">
+    <option value="">Tüm Platformlar</option>
+    <option value="X/Twitter">X / Twitter</option>
+    <option value="YouTube">YouTube</option>
+    <option value="Diğer">Diğer</option>
+  </select>
+  <input type="checkbox" id="pending-only" style="display:none" aria-hidden="true">
+
+  <!-- Gizli JS uyumluluk elementleri — popup.js referansları için -->
+  <input type="text" id="search-input" style="display:none" autocomplete="off">
+  <span id="stat-total"   style="display:none">0</span>
+  <span                  id="stat-pending"    style="display:none">0</span>
+  <span                  id="stat-done"       style="display:none">0</span>
+  <div class="bookmark-list" id="bookmark-list" style="display:none">
+    <div class="empty-state" id="empty-state"></div>
+  </div>
+
+  <!-- Gizli import dosya seçici -->
+  <input type="file" id="import-file" accept=".json" style="display:none">
+
+  <!-- Toast bildirimleri -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ─── Önizleme için örnek veri (extension ortamında devre dışı) ─── -->
+  <script>
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      const SAMPLE = [
+        { id:'a1', url:'https://x.com/elonmusk/status/1234567890', title:'Elon Musk: The future of AI is here — thread on autonomous systems and what comes next', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*8).toISOString(), checked:false, note:'İlginç thread, takip et', tags:['AI','thread'] },
+        { id:'a2', url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title:'Rick Astley - Never Gonna Give You Up (Official Music Video)', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*2).toISOString(), checked:false, note:'', tags:['müzik'] },
+        { id:'a3', url:'https://x.com/naval/status/9876543210', title:'Naval: How to get rich without getting lucky — mega thread on wealth building', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*60*5).toISOString(), checked:true, note:'Okundu, tekrar bakılacak', tags:['finance','must-read'] },
+        { id:'a4', url:'https://www.youtube.com/watch?v=abc123xyz', title:'System Design Interview – An Insider\'s Guide | Full Course 2024', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*24).toISOString(), checked:false, note:'Yarın izle', tags:['dev','system-design'] },
+        { id:'a5', url:'https://github.com/anthropics/claude-code', title:'anthropics/claude-code: Claude Code — AI coding assistant for terminals', platform:'Diğer', createdAt:new Date(Date.now()-1000*60*60*48).toISOString(), checked:false, note:'', tags:['github','tools'] },
+      ];
+      const SAMPLE_USAGE = { 'AI':5, 'thread':4, 'dev':3, 'must-read':3, 'müzik':2, 'finance':2, 'system-design':1, 'github':1, 'tools':1 };
+      const _LS_KEY = 'mybookmark_dev';
+      const _DEFAULTS = { bookmarks: SAMPLE, tagUsage: SAMPLE_USAGE };
+      function _lsGet() { try { const r = localStorage.getItem(_LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
+      function _lsSet(obj) { try { localStorage.setItem(_LS_KEY, JSON.stringify(Object.assign(_lsGet() || Object.assign({}, _DEFAULTS), obj))); } catch {} }
+      if (!_lsGet()) _lsSet(_DEFAULTS);
+      const _storageListeners = [];
+      const _notifyStorageChange = (nextStore, prevStore) => {
+        const changes = {};
+        for (const key of Object.keys(nextStore)) {
+          const oldValue = prevStore ? prevStore[key] : undefined;
+          const newValue = nextStore[key];
+          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+            changes[key] = { oldValue, newValue };
+          }
+        }
+        if (!Object.keys(changes).length) return;
+        _storageListeners.forEach(listener => {
+          try { listener(changes, 'local'); } catch {}
+        });
+      };
+      window.chrome = {
+        storage: {
+          local: {
+            get: (keys, cb) => {
+              const store = _lsGet() || _DEFAULTS;
+              const r = Array.isArray(keys) ? Object.fromEntries(keys.map(k => [k, store[k]])) : (typeof keys === 'string' ? { [keys]: store[keys] } : store);
+              if (cb) cb(r); return Promise.resolve(r);
+            },
+            set: (obj, cb) => {
+              const prevStore = _lsGet() || _DEFAULTS;
+              const nextStore = Object.assign({}, prevStore, obj);
+              _lsSet(obj);
+              _notifyStorageChange(nextStore, prevStore);
+              if (cb) cb();
+              return Promise.resolve();
+            }
+          },
+          onChanged: {
+            addListener: listener => { if (typeof listener === 'function') _storageListeners.push(listener); }
+          }
+        },
+        tabs: {
+          query:(o,cb)=>{ if(cb) cb([{url:'https://example.com',title:'Example Page'}]); return Promise.resolve([{url:'https://example.com',title:'Example Page'}]); },
+          create:({ url }) => { if (url) window.open(url, '_blank', 'noopener'); }
+        },
+        runtime: { getURL: s=>s },
+      };
+    }
+  </script>
+
+  <script src="utils.js?v=5"></script>
+  <script src="popup.js?v=13"></script>
+  <script>loadBookmarks();</script>
+</body>
+</html>

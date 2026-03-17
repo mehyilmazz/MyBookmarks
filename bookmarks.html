@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyBookmark — Arşiv</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="bookmarks.css?v=14">
+</head>
+<body>
+
+  <!-- ═══════════════════ HEADER ═══════════════════ -->
+  <header class="app-header">
+    <div class="header-brand">
+      <svg class="brand-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M5 4C5 3.44772 5.44772 3 6 3H18C18.5523 3 19 3.44772 19 4V21L12 17.5L5 21V4Z"
+              fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <div class="brand-text">
+        <span class="brand-name">MyBookmark</span>
+      </div>
+    </div>
+
+    <div class="header-search">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+      </svg>
+      <input type="text" id="search-input" class="search-input" placeholder="Başlık, URL, not veya tag ile ara…" autocomplete="off" spellcheck="false">
+      <kbd class="search-kbd">/</kbd>
+    </div>
+
+    <div class="header-controls">
+      <button id="btn-select-mode" class="ctrl-btn">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        Seç
+      </button>
+      <button id="btn-import" class="ctrl-btn">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+        İçe Aktar
+      </button>
+      <button id="btn-export" class="ctrl-btn ctrl-btn--accent">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+        Dışa Aktar
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════ FILTER BAR ═══════════════════ -->
+  <div class="filter-bar">
+
+    <!-- Platform filtreleri -->
+    <div class="filter-group" id="platform-filters">
+      <button class="fbar-btn active" data-platform="">Tümü</button>
+      <button class="fbar-btn fbar-btn--tw" data-platform="X/Twitter">
+        <span class="fbar-dot"></span>Twitter
+        <span class="fbar-count" id="s-tw">0</span>
+      </button>
+      <button class="fbar-btn fbar-btn--yt" data-platform="YouTube">
+        <span class="fbar-dot"></span>YouTube
+        <span class="fbar-count" id="s-yt">0</span>
+      </button>
+      <button class="fbar-btn fbar-btn--other" data-platform="Diğer">
+        <span class="fbar-dot"></span>Diğer
+        <span class="fbar-count" id="s-other">0</span>
+      </button>
+    </div>
+
+    <div class="filter-sep"></div>
+
+    <!-- Durum filtreleri -->
+    <div class="filter-group" id="status-filters">
+      <button class="fbar-btn" data-status="">Tümü</button>
+      <button class="fbar-btn fbar-btn--warn active" data-status="pending">
+        <span class="fbar-dot"></span>Bekleyen
+      </button>
+      <button class="fbar-btn fbar-btn--ok" data-status="done">
+        <span class="fbar-dot"></span>Tamamlanan
+      </button>
+    </div>
+
+    <div class="filter-spacer"></div>
+
+    <!-- Seçim modu kontrolleri (seçim modunda görünür) -->
+    <div id="select-controls" class="select-controls" style="display:none">
+      <button class="fbar-ghost" id="btn-select-all">Tümünü Seç</button>
+      <button class="fbar-ghost" id="btn-select-none">Seçimi Kaldır</button>
+      <span class="select-count-label"><span id="selected-count">0</span> seçili</span>
+      <div class="filter-sep"></div>
+    </div>
+
+    <!-- Sağ: sırala + görünüm -->
+    <div class="filter-end">
+      <div class="select-wrap">
+        <select id="sort-select" class="sort-select">
+          <option value="newest">En Yeni Önce</option>
+          <option value="oldest">En Eski Önce</option>
+          <option value="platform">Platforma Göre</option>
+          <option value="pending">Bekleyenler Önce</option>
+          <option value="title">Başlığa Göre (A→Z)</option>
+        </select>
+        <svg class="select-chevron" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <div class="view-toggle">
+        <button class="vbtn" id="view-feed" title="Feed görünüm">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8-.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1H9zm0 3a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1H9zm-8 4A1.5 1.5 0 0 1 2.5 8h3A1.5 1.5 0 0 1 7 9.5v3A1.5 1.5 0 0 1 5.5 14h-3A1.5 1.5 0 0 1 1 12.5v-3zm8-.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1H9zm0 3a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1H9z"/></svg>
+        </button>
+        <button class="vbtn active" id="view-list" title="Liste görünüm">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════ MAIN ═══════════════════ -->
+  <main class="main">
+
+    <div class="card-grid" id="card-grid"></div>
+
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="empty-glyph">
+        <svg viewBox="0 0 64 64" fill="none">
+          <path d="M16 8C16 6.89543 16.8954 6 18 6H46C47.1046 6 48 6.89543 48 8V58L32 50L16 58V8Z"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <p class="empty-title">Kayıt bulunamadı</p>
+      <p class="empty-sub">Filtrelerinizi değiştirin ya da arama terimini temizleyin</p>
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════ BULK ACTION BAR ═══════════════════ -->
+  <div class="bulk-bar" id="bulk-bar">
+    <span class="bulk-info"><strong id="bulk-count">0</strong> kayıt seçili</span>
+    <div class="bulk-actions">
+      <button class="bulk-btn" id="bulk-done">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+        Tamamlandı İşaretle
+      </button>
+      <button class="bulk-btn" id="bulk-pending">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/></svg>
+        Bekliyor Yap
+      </button>
+      <button class="bulk-btn" id="bulk-export">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+        Seçilenleri Dışa Aktar
+      </button>
+      <button class="bulk-btn bulk-btn--danger" id="bulk-delete">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" clip-rule="evenodd"/></svg>
+        Sil
+      </button>
+      <button class="bulk-btn bulk-btn--ghost" id="bulk-cancel">İptal</button>
+    </div>
+  </div>
+
+  <input type="file" id="import-file" accept=".json" style="display:none">
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ─── Önizleme için örnek veri (extension ortamında devre dışı) ─── -->
+  <script>
+    if (typeof chrome === 'undefined' || !chrome.storage) {
+      const SAMPLE = [
+        { id:'a1', url:'https://x.com/elonmusk/status/1234567890', title:'Elon Musk: The future of AI is here — thread on autonomous systems and what comes next', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*8).toISOString(), checked:false, note:'İlginç thread, takip et', tags:['AI','thread'] },
+        { id:'a2', url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title:'Rick Astley - Never Gonna Give You Up (Official Music Video)', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*2).toISOString(), checked:false, note:'', tags:['müzik'] },
+        { id:'a3', url:'https://x.com/naval/status/9876543210', title:'Naval: How to get rich without getting lucky — mega thread on wealth building', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*60*5).toISOString(), checked:true, note:'Okundu, tekrar bakılacak', tags:['finance','must-read'] },
+        { id:'a4', url:'https://www.youtube.com/watch?v=abc123xyz', title:'System Design Interview – An Insider\'s Guide | Full Course 2024', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*24).toISOString(), checked:false, note:'Yarın izle', tags:['dev','system-design'] },
+        { id:'a5', url:'https://github.com/anthropics/claude-code', title:'anthropics/claude-code: Claude Code — AI coding assistant for terminals', platform:'Diğer', createdAt:new Date(Date.now()-1000*60*60*48).toISOString(), checked:false, note:'', tags:['github','tools'] },
+      ];
+      const _LS_KEY = 'mybookmark_dev';
+      function _lsGet() { try { const r = localStorage.getItem(_LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
+      function _lsSet(obj) { try { localStorage.setItem(_LS_KEY, JSON.stringify(Object.assign(_lsGet() || { bookmarks: SAMPLE }, obj))); } catch {} }
+      if (!_lsGet()) _lsSet({ bookmarks: SAMPLE });
+      const _storageListeners = [];
+      const _notifyStorageChange = (nextStore, prevStore) => {
+        const changes = {};
+        for (const key of Object.keys(nextStore)) {
+          const oldValue = prevStore ? prevStore[key] : undefined;
+          const newValue = nextStore[key];
+          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+            changes[key] = { oldValue, newValue };
+          }
+        }
+        if (!Object.keys(changes).length) return;
+        _storageListeners.forEach(listener => {
+          try { listener(changes, 'local'); } catch {}
+        });
+      };
+      window.chrome = {
+        storage: {
+          local: {
+            get: (keys, cb) => {
+              const store = _lsGet() || { bookmarks: SAMPLE };
+              const r = Array.isArray(keys) ? Object.fromEntries(keys.map(k => [k, store[k]])) : (typeof keys === 'string' ? { [keys]: store[keys] } : store);
+              if (cb) cb(r); return Promise.resolve(r);
+            },
+            set: (obj, cb) => {
+              const prevStore = _lsGet() || { bookmarks: SAMPLE };
+              const nextStore = Object.assign({}, prevStore, obj);
+              _lsSet(obj);
+              _notifyStorageChange(nextStore, prevStore);
+              if (cb) cb();
+              return Promise.resolve();
+            }
+          },
+          onChanged: {
+            addListener: listener => { if (typeof listener === 'function') _storageListeners.push(listener); }
+          }
+        },
+        tabs: { create:({ url }) => { if (url) window.open(url, '_blank', 'noopener'); } },
+        runtime: { getURL: s=>s },
+      };
+    }
+  </script>
+
+  <script src="utils.js"></script>
+  <script src="bookmarks.js?v=14"></script>
+</body>
+</html>
