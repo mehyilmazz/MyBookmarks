@@ -215,11 +215,21 @@ const PLATFORM_LOGOS = {
   'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`,
   'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
   'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`,
+  'image':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
 };
+
+// Direct image URL detection (shared helper)
+function isDirectImageUrl(url) {
+  return /\.(jpe?g|png|gif|webp|svg|avif)(\?.*)?$/i.test(url)
+    || /^https?:\/\/pbs\.twimg\.com\/media\//i.test(url)
+    || /^https?:\/\/i\.imgur\.com\//i.test(url);
+}
 
 function buildListItem(bm, index) {
   const platCls  = getPlatformClass(bm.platform);
-  const platLogo = PLATFORM_LOGOS[bm.platform] || PLATFORM_LOGOS['Diğer'];
+  const platLogo = isDirectImageUrl(bm.url)
+    ? PLATFORM_LOGOS['image']
+    : (PLATFORM_LOGOS[bm.platform] || PLATFORM_LOGOS['Diğer']);
 
   const item = document.createElement('div');
   item.className = [
@@ -324,11 +334,7 @@ function renderPreview(bm) {
   const platCls   = getPlatformClass(bm.platform);
   const platLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
 
-  // Use stored thumbnail, or fall back to direct image URL if the URL itself is an image
-  const isImageUrl = url => /\.(jpe?g|png|gif|webp|svg|avif)(\?.*)?$/i.test(url)
-    || /^https?:\/\/pbs\.twimg\.com\/media\//i.test(url)
-    || /^https?:\/\/i\.imgur\.com\//i.test(url);
-  const thumbSrc = bm.thumbnail || (isImageUrl(bm.url) ? bm.url : null);
+  const thumbSrc = bm.thumbnail || (isDirectImageUrl(bm.url) ? bm.url : null);
 
   let thumbHTML;
   if (thumbSrc) {
@@ -368,8 +374,29 @@ function renderPreview(bm) {
         thumb.innerHTML = `<div class="pv-thumb-placeholder pv-thumb-placeholder--${cls}">${BIG_PLAT_ICONS[plat] || ''}</div>`;
       }
     }, { once: true });
+
+    // Lightbox: click thumbnail to show full-size
+    thumbImg.style.cursor = 'zoom-in';
+    thumbImg.addEventListener('click', () => showLightbox(thumbImg.src));
   }
 
+}
+
+// ─── Lightbox ──────────────────────────────────────────────────────────────
+
+function showLightbox(src) {
+  const existing = document.getElementById('bm-lightbox');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'bm-lightbox';
+  overlay.innerHTML = `<img src="${escapeAttribute(src)}" alt="">`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', close);
+  const onKey = e => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
 }
 
 function getPlatformClass(platform) {
@@ -402,6 +429,17 @@ function buildSiteBadge(url, platform, extraClass = '') {
 }
 
 function buildFeedPreview(bm) {
+  const thumbSrc = bm.thumbnail || (isDirectImageUrl(bm.url) ? bm.url : null);
+
+  if (thumbSrc) {
+    return `
+      <div class="feed-item__thumb-wrap">
+        <img class="feed-item__thumb-img" src="${escapeAttribute(thumbSrc)}" alt="" loading="lazy"
+             data-platform="${escapeAttribute(bm.platform)}" data-plat="${getPlatformClass(bm.platform)}">
+      </div>
+    `;
+  }
+
   const meta = getSiteMeta(bm.url, bm.platform);
   const platformClass = getPlatformClass(bm.platform);
   const platformLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
@@ -446,6 +484,25 @@ function buildFeedItem(bm, index) {
     ${buildFeedPreview(bm)}
     <div class="feed-item__url">${escapeHtml(shortUrl(bm.url))}</div>
   `;
+
+  // Feed thumbnail fallback (CSP-safe)
+  const feedImg = item.querySelector('.feed-item__thumb-img');
+  if (feedImg) {
+    feedImg.addEventListener('error', () => {
+      const wrap = feedImg.closest('.feed-item__thumb-wrap');
+      const plat = feedImg.dataset.platform;
+      const cls  = feedImg.dataset.plat;
+      if (wrap) {
+        const meta = getSiteMeta(bm.url, bm.platform);
+        const label = plat === 'X/Twitter' ? 'Twitter' : plat;
+        wrap.className = 'feed-item__thumb-wrap feed-item__thumb-wrap--placeholder';
+        wrap.innerHTML = `<div class="feed-item__thumb-placeholder feed-thumb--${cls}">
+          ${buildSiteBadge(bm.url, bm.platform, 'feed-thumb-badge')}
+          <div class="feed-item__thumb-meta"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(meta.host)}</span></div>
+        </div>`;
+      }
+    }, { once: true });
+  }
 
   item.addEventListener('click', e => {
     if (e.target.closest('.feed-item__del')) return;
