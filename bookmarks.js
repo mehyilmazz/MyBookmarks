@@ -311,7 +311,7 @@ function renderPreview(bm) {
     ? `<div class="pv-note-section"><div class="pv-note-label">Not</div><div class="pv-note-text">${escapeHtml(bm.note)}</div></div>`
     : '';
 
-  const doneLabel = bm.checked ? 'Bekliyor Yap' : 'Tamamlandı';
+  const doneLabel = bm.checked ? 'Bekliyor' : 'Tamamlandı';
 
   DOM.previewCard.innerHTML = `
     ${thumbHTML}
