@@ -324,11 +324,17 @@ function renderPreview(bm) {
   const platCls   = getPlatformClass(bm.platform);
   const platLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
 
+  // Use stored thumbnail, or fall back to direct image URL if the URL itself is an image
+  const isImageUrl = url => /\.(jpe?g|png|gif|webp|svg|avif)(\?.*)?$/i.test(url)
+    || /^https?:\/\/pbs\.twimg\.com\/media\//i.test(url)
+    || /^https?:\/\/i\.imgur\.com\//i.test(url);
+  const thumbSrc = bm.thumbnail || (isImageUrl(bm.url) ? bm.url : null);
+
   let thumbHTML;
-  if (bm.thumbnail) {
+  if (thumbSrc) {
     thumbHTML = `
       <div class="pv-thumb">
-        <img src="${escapeAttribute(bm.thumbnail)}" alt="" loading="lazy" data-plat="${platCls}" data-platform="${escapeAttribute(bm.platform)}">
+        <img src="${escapeAttribute(thumbSrc)}" alt="" loading="lazy" data-plat="${platCls}" data-platform="${escapeAttribute(bm.platform)}">
         <span class="pv-plat-badge pv-plat-badge--${platCls}">${PLAT_ICONS[bm.platform] || ''}${escapeHtml(platLabel)}</span>
       </div>
     `;
