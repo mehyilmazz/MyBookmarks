@@ -169,7 +169,12 @@ function normalizeBookmark(item) {
     checked: typeof item.checked === 'boolean' ? item.checked : false,
     note: typeof item.note === 'string' ? item.note.trim() : '',
     tags: sanitizeTags(item.tags),
-    thumbnail: typeof item.thumbnail === 'string' && item.thumbnail.trim() ? item.thumbnail.trim() : null
+    thumbnail: (() => {
+      const t = typeof item.thumbnail === 'string' ? item.thumbnail.trim() : '';
+      if (!t) return null;
+      try { const u = new URL(t); return (u.protocol === 'http:' || u.protocol === 'https:') ? t : null; }
+      catch { return null; }
+    })()
   };
 }
 

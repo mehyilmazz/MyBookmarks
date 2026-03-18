@@ -62,7 +62,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       // og:image in both attribute orderings
       const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
              || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-      sendResponse({ thumbnail: m ? m[1] : null });
+      const raw = m ? m[1].trim() : null;
+      const thumb = raw && raw.length <= 2048 ? raw : null;
+      sendResponse({ thumbnail: thumb });
     })
     .catch(() => sendResponse({ thumbnail: null }));
 

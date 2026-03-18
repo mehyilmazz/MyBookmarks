@@ -1653,7 +1653,7 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1.5px solid var(--border-2);
+  border: 1.5px solid var(--border-hover);
   background: transparent;
   flex-shrink: 0;
   display: none;
@@ -1689,7 +1689,7 @@ body {
 
 .bm-list-footer .load-more-btn:hover {
   background: var(--surface-2);
-  border-color: var(--border-2);
+  border-color: var(--border-hover);
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1874,7 +1874,7 @@ body {
 
 .pv-btn:hover {
   background: var(--surface-3, var(--surface));
-  border-color: var(--border-2);
+  border-color: var(--border-hover);
   color: var(--text);
 }
 

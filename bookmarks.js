@@ -82,10 +82,12 @@ async function init() {
       }
       resetVisibleCount();
       renderAll();
-      // Fetch thumbnails for new bookmarks (async, non-blocking)
-      for (const bm of newBookmarks) {
-        getThumbnail(bm);
-      }
+      // Fetch thumbnails for new bookmarks sequentially (avoid concurrent request flood)
+      (async () => {
+        for (const bm of newBookmarks) {
+          await getThumbnail(bm);
+        }
+      })();
     }
   });
 
@@ -297,6 +299,7 @@ function renderPreview(bm) {
 
   DOM.previewEmpty.style.display = 'none';
   DOM.previewCard.style.display  = 'block';
+  DOM.previewCard.scrollTop = 0;
 
   const platCls   = getPlatformClass(bm.platform);
   const platLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
@@ -790,10 +793,6 @@ async function toggleCheckedAndReselect(id) {
   if (!state.success) return;
   allBookmarks = state.bookmarks;
   renderAll();
-  if (selectedId === id) {
-    const updated = allBookmarks.find(b => b.id === id);
-    if (updated) renderPreview(updated);
-  }
   showToast(state.bookmark.checked ? 'Tamamlandı olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
 }
 
@@ -935,17 +934,20 @@ async function getThumbnail(bm) {
   }
 
   // Twitter / Other: fetch og:image via background
-  chrome.runtime.sendMessage({ action: 'fetchOgImage', url: bm.url }, async (response) => {
-    if (chrome.runtime.lastError) return; // background not available (e.g. dev mode)
-    const thumb = response?.thumbnail;
-    if (!thumb) return;
-    await BookmarkStore.updateThumbnail(bm.id, thumb);
-    const state = await BookmarkStore.getState();
-    allBookmarks = state.bookmarks;
-    if (selectedId === bm.id) {
-      const updated = allBookmarks.find(b => b.id === bm.id);
-      if (updated) renderPreview(updated);
-    }
+  await new Promise(resolve => {
+    chrome.runtime.sendMessage({ action: 'fetchOgImage', url: bm.url }, async (response) => {
+      if (chrome.runtime.lastError) { resolve(); return; }
+      const thumb = response?.thumbnail;
+      if (!thumb) { resolve(); return; }
+      await BookmarkStore.updateThumbnail(bm.id, thumb);
+      const state = await BookmarkStore.getState();
+      allBookmarks = state.bookmarks;
+      if (selectedId === bm.id) {
+        const updated = allBookmarks.find(b => b.id === bm.id);
+        if (updated) renderPreview(updated);
+      }
+      resolve();
+    });
   });
 }
 
