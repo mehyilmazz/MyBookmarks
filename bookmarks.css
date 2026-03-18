@@ -1,10 +1,10 @@
 /* =====================================================================
-   bookmarks.css — MyBookmark Arşiv Sayfası · Koyu Tema · Inter
+   bookmarks.css — MyBookmark Arşiv Sayfası · Koyu Tema
    ===================================================================== */
 
 /* ─── CSS Değişkenleri (Claude+ Tema) ──────────────────────────────── */
 :root {
-  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font: 'Segoe UI', 'Aptos', 'Trebuchet MS', sans-serif;
 
   --bg:            #1b1b19;
   --surface:       #262624;
@@ -484,6 +484,13 @@ body {
   padding: calc(var(--header-h) + var(--filter-bar-h) + 20px) 24px 100px;
 }
 
+.results-label {
+  margin-bottom: 14px;
+  color: var(--text-3);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
 /* Results bar */
 .results-bar {
   margin-bottom: 14px;
@@ -563,6 +570,29 @@ body {
   padding: 1px 6px;
   border-radius: 10px;
   margin-left: auto;
+}
+
+.platform-section__footer {
+  padding: 0 12px 12px;
+}
+
+.load-more-btn {
+  width: 100%;
+  border: 1px dashed var(--border-strong);
+  background: rgba(255,255,255,0.02);
+  color: var(--text-2);
+  border-radius: 12px;
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.load-more-btn:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.04);
+  border-color: var(--accent);
 }
 
 /* ─── Tablo (Liste Görünümü) ────────────────────────────────────────── */
@@ -738,13 +768,6 @@ body {
   gap: 7px;
 }
 
-.feed-item__favicon {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  object-fit: contain;
-}
-
 .feed-item__plat-icon {
   display: flex;
   align-items: center;
@@ -808,6 +831,55 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.feed-item__thumb-wrap--placeholder {
+  border: 1px solid var(--border);
+}
+
+.feed-item__thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  background:
+    radial-gradient(circle at top left, rgba(255,255,255,0.1), transparent 44%),
+    linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.08));
+}
+
+.feed-thumb--tw { background-color: rgba(29,155,240,0.16); }
+.feed-thumb--yt { background-color: rgba(255,64,64,0.14); }
+.feed-thumb--other { background-color: rgba(167,139,250,0.16); }
+
+.feed-thumb-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  font-size: 15px;
+}
+
+.feed-item__thumb-meta {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.feed-item__thumb-meta strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.feed-item__thumb-meta span {
+  color: var(--text-2);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── URL ── */
@@ -966,14 +1038,45 @@ body {
   gap: 8px;
 }
 
-.favicon {
-  width: 15px;
-  height: 15px;
-  border-radius: 3px;
-  object-fit: contain;
+.site-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  margin-top: 2px;
-  opacity: 0.8;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.site-badge--card,
+.site-badge--row {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  font-size: 10.5px;
+}
+
+.site-badge--tw {
+  color: #7cd0ff;
+  background: rgba(29,155,240,0.16);
+  border-color: rgba(29,155,240,0.28);
+}
+
+.site-badge--yt {
+  color: #ffb0b0;
+  background: rgba(255,64,64,0.14);
+  border-color: rgba(255,64,64,0.25);
+}
+
+.site-badge--other {
+  color: #dcc8ff;
+  background: rgba(167,139,250,0.14);
+  border-color: rgba(167,139,250,0.25);
 }
 
 .card-title {
@@ -1384,3 +1487,415 @@ body {
 .toast-error   { border-left-color: var(--danger);  }
 .toast-warning { border-left-color: var(--warning); }
 .toast-info    { border-left-color: var(--info);    }
+
+/* ═══════════════════════════════════════════════════
+   APP BODY — Split Panel Layout
+═══════════════════════════════════════════════════ */
+
+.app-body {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 0;
+  height: calc(100vh - var(--header-h) - var(--filter-bar-h));
+  overflow: hidden;
+}
+
+/* ── Sol Panel ── */
+.panel-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+.panel-list__header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.panel-list__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.panel-list__icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.panel-list .results-label {
+  font-size: 11px;
+  color: var(--text-3);
+  margin: 0;
+}
+
+.bm-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+/* ── Sağ Panel ── */
+.panel-preview {
+  overflow-y: auto;
+  background: var(--surface);
+}
+
+/* ═══════════════════════════════════════════════════
+   UNIFIED LIST ITEMS (Sol Panel)
+═══════════════════════════════════════════════════ */
+
+.bm-list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background 120ms, border-color 120ms;
+  animation: fadeInRow 180ms ease both;
+  position: relative;
+}
+
+.bm-list-item:hover {
+  background: var(--surface-2);
+}
+
+.bm-list-item.is-selected-preview {
+  background: var(--surface-2);
+  border-left-color: var(--accent);
+}
+
+.bm-list-item.is-done .bm-li-title {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.bm-li-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bm-li-dot--tw    { background: #1d9bf0; }
+.bm-li-dot--yt    { background: #ff4040; }
+.bm-li-dot--other { background: #a78bfa; }
+
+.bm-li-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.bm-li-title {
+  font-size: 12.5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.bm-li-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.bm-li-date {
+  font-size: 10.5px;
+  color: var(--text-3);
+}
+
+.bm-li-status {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--text-3);
+}
+
+.bm-li-status--done {
+  color: #4ade80;
+}
+
+.bm-li-delete {
+  opacity: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: opacity 100ms, color 100ms;
+  flex-shrink: 0;
+}
+
+.bm-list-item:hover .bm-li-delete {
+  opacity: 1;
+}
+
+.bm-li-delete:hover {
+  color: #ff4040;
+}
+
+/* Checkbox — selection mode */
+.bm-li-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-2);
+  background: transparent;
+  flex-shrink: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.select-mode .bm-li-checkbox {
+  display: flex;
+}
+
+.bm-list-item.is-checked-select .bm-li-checkbox {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Load more */
+.bm-list-footer {
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.load-more-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-2);
+  font-size: 12px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+
+.load-more-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-2);
+}
+
+/* ═══════════════════════════════════════════════════
+   PREVIEW PANEL (Sağ Panel)
+═══════════════════════════════════════════════════ */
+
+/* Boş durum */
+.preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text-3);
+  opacity: 0.5;
+}
+
+.preview-empty p {
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Kart */
+.preview-card {
+  padding: 20px;
+  animation: fadeInRow 200ms ease both;
+}
+
+/* Thumbnail */
+.pv-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-2);
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.pv-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pv-thumb-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-3);
+}
+
+.pv-thumb-placeholder--tw    { background: color-mix(in srgb, #1d9bf0 15%, var(--surface-2)); }
+.pv-thumb-placeholder--yt    { background: color-mix(in srgb, #ff4040 15%, var(--surface-2)); }
+.pv-thumb-placeholder--other { background: color-mix(in srgb, #a78bfa 15%, var(--surface-2)); }
+
+.pv-thumb-placeholder svg {
+  opacity: 0.4;
+}
+
+.pv-plat-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pv-plat-badge--tw    { background: rgba(29,155,240,.25); color:#1d9bf0; }
+.pv-plat-badge--yt    { background: rgba(255,64,64,.25);  color:#ff4040; }
+.pv-plat-badge--other { background: rgba(167,139,250,.25);color:#a78bfa; }
+
+/* İçerik */
+.pv-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0 0 8px;
+}
+
+.pv-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 12px;
+}
+
+.pv-meta-item {
+  font-size: 11.5px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pv-url {
+  font-size: 11.5px;
+  color: var(--text-3);
+  word-break: break-all;
+  margin-bottom: 14px;
+}
+
+.pv-url a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pv-url a:hover {
+  color: var(--text-2);
+  text-decoration: underline;
+}
+
+/* Not */
+.pv-note-section {
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.pv-note-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 4px;
+}
+
+.pv-note-text {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Etiketler */
+.pv-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+/* Aksiyon butonları */
+.pv-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pv-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.pv-btn:hover {
+  background: var(--surface-3, var(--surface));
+  border-color: var(--border-2);
+  color: var(--text);
+}
+
+.pv-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.pv-btn--primary:hover {
+  opacity: .88;
+}
+
+.pv-btn--danger:hover {
+  background: rgba(255,64,64,.12);
+  border-color: #ff4040;
+  color: #ff4040;
+}
+
+.pv-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 0;
+}
