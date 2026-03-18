@@ -25,6 +25,33 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// ─── Tab'dan thumbnail çekme (executeScript ile live DOM) ──────────────────
+
+async function extractThumbnailFromTab(tabId) {
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        const og = document.querySelector('meta[property="og:image"]');
+        if (og?.content) return og.content;
+        const tw = document.querySelector('meta[name="twitter:image"]');
+        if (tw?.content) return tw.content;
+        // Tweet'teki resim doğrudan DOM'dan
+        const tweetImg = document.querySelector(
+          '[data-testid="tweetPhoto"] img, [data-testid="tweet-img"] img, ' +
+          '[data-testid="card.layoutSmall.media"] img, [data-testid="card.layoutLarge.media"] img'
+        );
+        if (tweetImg?.src?.includes('pbs.twimg.com')) return tweetImg.src;
+        return null;
+      }
+    });
+    const thumbnail = results?.[0]?.result || null;
+    return thumbnail;
+  } catch {
+    return null;
+  }
+}
+
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   let url;
   let title;
@@ -40,7 +67,14 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!url) return;
 
   try {
-    await BookmarkStore.saveBookmark({ url, title });
+    const result = await BookmarkStore.saveBookmark({ url, title });
+    if (result?.success && result?.bookmark?.id && tab?.id) {
+      // Live DOM'dan thumbnail çek ve kaydet
+      const thumbnail = await extractThumbnailFromTab(tab.id);
+      if (thumbnail) {
+        await BookmarkStore.updateThumbnail(result.bookmark.id, thumbnail);
+      }
+    }
   } catch (error) {
     console.error('[MyBookmark] Context menu kayit hatasi:', error);
   }
