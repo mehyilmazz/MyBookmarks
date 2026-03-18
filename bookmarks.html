@@ -188,11 +188,11 @@
   <script>
     if (typeof chrome === 'undefined' || !chrome.storage) {
       const SAMPLE = [
-        { id:'a1', url:'https://x.com/elonmusk/status/1234567890', title:'Elon Musk: The future of AI is here — thread on autonomous systems and what comes next', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*8).toISOString(), checked:false, note:'İlginç thread, takip et', tags:['AI','thread'] },
-        { id:'a2', url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title:'Rick Astley - Never Gonna Give You Up (Official Music Video)', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*2).toISOString(), checked:false, note:'', tags:['müzik'] },
-        { id:'a3', url:'https://x.com/naval/status/9876543210', title:'Naval: How to get rich without getting lucky — mega thread on wealth building', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*60*5).toISOString(), checked:true, note:'Okundu, tekrar bakılacak', tags:['finance','must-read'] },
-        { id:'a4', url:'https://www.youtube.com/watch?v=abc123xyz', title:'System Design Interview – An Insider\'s Guide | Full Course 2024', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*24).toISOString(), checked:false, note:'Yarın izle', tags:['dev','system-design'] },
-        { id:'a5', url:'https://github.com/anthropics/claude-code', title:'anthropics/claude-code: Claude Code — AI coding assistant for terminals', platform:'Diğer', createdAt:new Date(Date.now()-1000*60*60*48).toISOString(), checked:false, note:'', tags:['github','tools'] },
+        { id:'a1', url:'https://x.com/elonmusk/status/1234567890', title:'Elon Musk: The future of AI is here — thread on autonomous systems and what comes next', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*8).toISOString(), checked:false, note:'İlginç thread, takip et', tags:['AI','thread'], thumbnail:null },
+        { id:'a2', url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title:'Rick Astley - Never Gonna Give You Up (Official Music Video)', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*2).toISOString(), checked:false, note:'', tags:['müzik'], thumbnail:'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg' },
+        { id:'a3', url:'https://x.com/naval/status/9876543210', title:'Naval: How to get rich without getting lucky — mega thread on wealth building', platform:'X/Twitter', createdAt:new Date(Date.now()-1000*60*60*5).toISOString(), checked:true, note:'Okundu, tekrar bakılacak', tags:['finance','must-read'], thumbnail:null },
+        { id:'a4', url:'https://www.youtube.com/watch?v=abc123xyz', title:'System Design Interview – An Insider\'s Guide | Full Course 2024', platform:'YouTube', createdAt:new Date(Date.now()-1000*60*60*24).toISOString(), checked:false, note:'Yarın izle', tags:['dev','system-design'], thumbnail:'https://img.youtube.com/vi/abc123xyz/hqdefault.jpg' },
+        { id:'a5', url:'https://github.com/anthropics/claude-code', title:'anthropics/claude-code: Claude Code — AI coding assistant for terminals', platform:'Diğer', createdAt:new Date(Date.now()-1000*60*60*48).toISOString(), checked:false, note:'', tags:['github','tools'], thumbnail:null },
       ];
       const _LS_KEY = 'mybookmark_dev';
       function _lsGet() { try { const r = localStorage.getItem(_LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
@@ -235,7 +235,15 @@
           }
         },
         tabs: { create:({ url }) => { if (url) window.open(url, '_blank', 'noopener'); } },
-        runtime: { getURL: s=>s },
+        runtime: {
+          getURL: s => s,
+          sendMessage: (msg, cb) => {
+            // Dev modda og:image fetch yapılmaz — thumbnail null kalır
+            if (typeof cb === 'function') cb({ thumbnail: null });
+            return Promise.resolve({ thumbnail: null });
+          },
+          lastError: null,
+        },
       };
     }
   </script>
