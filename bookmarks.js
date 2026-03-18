@@ -246,6 +246,116 @@ function renderFeed() {
   DOM.bmList.appendChild(list);
 }
 
+// ─── Önizleme ─────────────────────────────────────────────────────────────
+
+function selectBookmark(id) {
+  selectedId = id;
+  DOM.bmList.querySelectorAll('.bm-list-item').forEach(el => {
+    el.classList.toggle('is-selected-preview', el.dataset.id === id);
+  });
+  const bm = allBookmarks.find(b => b.id === id);
+  renderPreview(bm || null);
+}
+
+function renderPreview(bm) {
+  if (!bm) {
+    DOM.previewEmpty.style.display = '';
+    DOM.previewCard.style.display  = 'none';
+    DOM.previewCard.innerHTML = '';
+    return;
+  }
+
+  DOM.previewEmpty.style.display = 'none';
+  DOM.previewCard.style.display  = 'block';
+
+  const platCls   = getPlatformClass(bm.platform);
+  const platLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
+
+  const PLAT_ICONS = {
+    'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
+    'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+    'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
+  };
+
+  const BIG_PLAT_ICONS = {
+    'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
+    'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+    'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
+  };
+
+  let thumbHTML;
+  if (bm.thumbnail) {
+    thumbHTML = `
+      <div class="pv-thumb">
+        <img src="${escapeAttribute(bm.thumbnail)}" alt="" loading="lazy"
+             onerror="this.parentElement.innerHTML='<div class=\\'pv-thumb-placeholder pv-thumb-placeholder--${platCls}\\'>${(BIG_PLAT_ICONS[bm.platform] || '').replace(/'/g, "\\'")}</div>'">
+        <span class="pv-plat-badge pv-plat-badge--${platCls}">${PLAT_ICONS[bm.platform] || ''}${escapeHtml(platLabel)}</span>
+      </div>
+    `;
+  } else {
+    thumbHTML = `
+      <div class="pv-thumb">
+        <div class="pv-thumb-placeholder pv-thumb-placeholder--${platCls}">
+          ${BIG_PLAT_ICONS[bm.platform] || ''}
+        </div>
+        <span class="pv-plat-badge pv-plat-badge--${platCls}">${PLAT_ICONS[bm.platform] || ''}${escapeHtml(platLabel)}</span>
+      </div>
+    `;
+  }
+
+  const tagsHTML = bm.tags.length > 0
+    ? `<div class="pv-tags">${bm.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`
+    : '';
+
+  const noteHTML = bm.note
+    ? `<div class="pv-note-section"><div class="pv-note-label">Not</div><div class="pv-note-text">${escapeHtml(bm.note)}</div></div>`
+    : '';
+
+  const doneLabel = bm.checked ? 'Bekliyor Yap' : 'Tamamlandı';
+
+  DOM.previewCard.innerHTML = `
+    ${thumbHTML}
+    <h2 class="pv-title" title="${escapeAttribute(bm.title)}">${escapeHtml(bm.title)}</h2>
+    <div class="pv-url"><a href="${escapeAttribute(bm.url)}" target="_blank" rel="noopener">${escapeHtml(shortUrl(bm.url, 60))}</a></div>
+    <div class="pv-meta">
+      <span class="pv-meta-item">📅 ${escapeHtml(formatDate(bm.createdAt))}</span>
+      ${bm.checked ? '<span class="pv-meta-item" style="color:#4ade80">✓ Tamamlandı</span>' : ''}
+    </div>
+    <div class="pv-divider"></div>
+    ${noteHTML}
+    ${tagsHTML}
+    <div class="pv-actions">
+      <button class="pv-btn pv-btn--primary" data-action="open">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z" clip-rule="evenodd"/></svg>
+        Aç
+      </button>
+      <button class="pv-btn" data-action="toggle-done">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+        ${escapeHtml(doneLabel)}
+      </button>
+      <button class="pv-btn pv-btn--danger" data-action="delete">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" clip-rule="evenodd"/></svg>
+        Sil
+      </button>
+    </div>
+  `;
+
+  DOM.previewCard.querySelector('[data-action="open"]').addEventListener('click', () => {
+    chrome.tabs.create({ url: bm.url });
+  });
+
+  DOM.previewCard.querySelector('[data-action="toggle-done"]').addEventListener('click', () => {
+    toggleCheckedAndReselect(bm.id);
+  });
+
+  DOM.previewCard.querySelector('[data-action="delete"]').addEventListener('click', () => {
+    if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) {
+      selectedId = null;
+      deleteBookmark(bm.id);
+    }
+  });
+}
+
 function getPlatformClass(platform) {
   return platform === 'X/Twitter' ? 'tw' : platform === 'YouTube' ? 'yt' : 'other';
 }
@@ -597,9 +707,9 @@ function toggleSelect(id, selected) {
   else          selectedIds.delete(id);
   updateBulkBar();
   updateSelectControls();
-  // Kart görünümünü güncelle
-  const card = DOM.grid.querySelector(`[data-id="${id}"]`);
-  if (card) card.classList.toggle('is-selected', selected);
+  // Liste öğesi görünümünü güncelle
+  const item = DOM.bmList.querySelector(`[data-id="${id}"]`);
+  if (item) item.classList.toggle('is-checked-select', selected);
 }
 
 function setSelectMode(enabled) {
@@ -609,7 +719,7 @@ function setSelectMode(enabled) {
 
   if (!enabled) {
     selectedIds.clear();
-    DOM.grid.querySelectorAll('.bm-card, .bm-row, .feed-item').forEach(c => c.classList.remove('is-selected'));
+    DOM.bmList.querySelectorAll('.bm-list-item, .feed-item').forEach(c => c.classList.remove('is-checked-select'));
   }
 
   updateBulkBar();
@@ -646,6 +756,23 @@ async function toggleChecked(id) {
   if (!state.success) return;
   allBookmarks = state.bookmarks;
   renderAll();
+  showToast(state.bookmark.checked ? 'Tamamlandı olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
+}
+
+async function toggleCheckedAndReselect(id) {
+  const state = await BookmarkStore.toggleChecked(id);
+  if (!state.success) return;
+  allBookmarks = state.bookmarks;
+  renderAll();
+  if (selectedId === id) {
+    const updated = allBookmarks.find(b => b.id === id);
+    if (updated) {
+      DOM.bmList.querySelectorAll('.bm-list-item').forEach(el => {
+        el.classList.toggle('is-selected-preview', el.dataset.id === id);
+      });
+      renderPreview(updated);
+    }
+  }
   showToast(state.bookmark.checked ? 'Tamamlandı olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
 }
 
@@ -773,7 +900,7 @@ function setupEventListeners() {
   // Arama
   DOM.searchInput.addEventListener('input', () => {
     activeFilters.search = DOM.searchInput.value;
-    resetVisibleCounts();
+    resetVisibleCount();
     renderGrid();
   });
 
@@ -796,7 +923,7 @@ function setupEventListeners() {
   // Sıralama
   DOM.sortSelect.addEventListener('change', () => {
     activeFilters.sort = DOM.sortSelect.value;
-    resetVisibleCounts();
+    resetVisibleCount();
     renderGrid();
   });
 
@@ -807,7 +934,7 @@ function setupEventListeners() {
     $('platform-filters').querySelectorAll('.fbar-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilters.platform = btn.dataset.platform ?? '';
-    resetVisibleCounts();
+    resetVisibleCount();
     renderGrid();
   });
 
@@ -818,7 +945,7 @@ function setupEventListeners() {
     $('status-filters').querySelectorAll('.fbar-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilters.status = btn.dataset.status ?? '';
-    resetVisibleCounts();
+    resetVisibleCount();
     renderGrid();
   });
 
@@ -829,14 +956,14 @@ function setupEventListeners() {
   DOM.btnSelectAll.addEventListener('click', () => {
     const filtered = getFiltered();
     filtered.forEach(b => selectedIds.add(b.id));
-    DOM.grid.querySelectorAll('.bm-card, .bm-row, .feed-item').forEach(c => c.classList.add('is-selected'));
+    DOM.bmList.querySelectorAll('.bm-list-item, .feed-item').forEach(c => c.classList.add('is-checked-select'));
     updateBulkBar();
     updateSelectControls();
   });
 
   DOM.btnSelectNone.addEventListener('click', () => {
     selectedIds.clear();
-    DOM.grid.querySelectorAll('.bm-card, .bm-row, .feed-item').forEach(c => c.classList.remove('is-selected'));
+    DOM.bmList.querySelectorAll('.bm-list-item, .feed-item').forEach(c => c.classList.remove('is-checked-select'));
     updateBulkBar();
     updateSelectControls();
   });
@@ -846,7 +973,7 @@ function setupEventListeners() {
     viewMode = 'feed';
     $('view-feed').classList.add('active');
     $('view-list').classList.remove('active');
-    resetVisibleCounts();
+    resetVisibleCount();
     renderGrid();
   });
 
@@ -854,7 +981,7 @@ function setupEventListeners() {
     viewMode = 'list';
     $('view-list').classList.add('active');
     $('view-feed').classList.remove('active');
-    resetVisibleCounts();
+    resetVisibleCount();
     renderGrid();
   });
 
