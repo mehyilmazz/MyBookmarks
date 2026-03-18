@@ -16,6 +16,18 @@ let viewMode      = 'list';     // 'list' | 'feed'
 let selectedId    = null;       // Önizleme panelinde gösterilen kayıt ID'si
 const LIST_PAGE_SIZE = 25;
 let visibleCount  = LIST_PAGE_SIZE; // Listede gösterilen kayıt sayısı
+
+const PLAT_ICONS = {
+  'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
+  'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+  'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
+};
+
+const BIG_PLAT_ICONS = {
+  'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
+  'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+  'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
+};
 let activeFilters = {
   search:   '',
   platform: '',
@@ -63,6 +75,7 @@ async function init() {
       for (const id of selectedIds) {
         if (!allBookmarks.find(b => b.id === id)) selectedIds.delete(id);
       }
+      resetVisibleCount();
       renderAll();
     }
   });
@@ -71,6 +84,7 @@ async function init() {
   document.addEventListener('visibilitychange', async () => {
     if (document.hidden) return;
     await loadState();
+    resetVisibleCount();
     renderAll();
   });
 }
@@ -109,6 +123,13 @@ function renderAll() {
   renderGrid();
   updateBulkBar();
   updateSelectControls();
+  // Re-sync preview if a bookmark is selected and was updated externally
+  if (selectedId) {
+    const bm = allBookmarks.find(b => b.id === selectedId);
+    // If bm is null, renderListView already called renderPreview(null) and cleared selectedId
+    // Only re-render if still selected
+    if (bm && selectedId) renderPreview(bm);
+  }
 }
 
 function updateStats() {
@@ -271,18 +292,6 @@ function renderPreview(bm) {
   const platCls   = getPlatformClass(bm.platform);
   const platLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
 
-  const PLAT_ICONS = {
-    'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
-    'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
-    'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
-  };
-
-  const BIG_PLAT_ICONS = {
-    'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
-    'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="36" height="36"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
-    'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
-  };
-
   let thumbHTML;
   if (bm.thumbnail) {
     thumbHTML = `
@@ -413,12 +422,6 @@ function buildFeedItem(bm, index) {
 
   const platLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
   const platCls   = getPlatformClass(bm.platform);
-
-  const PLAT_ICONS = {
-    'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
-    'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
-    'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
-  };
 
   item.innerHTML = `
     <div class="feed-item__header">
@@ -767,12 +770,7 @@ async function toggleCheckedAndReselect(id) {
   renderAll();
   if (selectedId === id) {
     const updated = allBookmarks.find(b => b.id === id);
-    if (updated) {
-      DOM.bmList.querySelectorAll('.bm-list-item').forEach(el => {
-        el.classList.toggle('is-selected-preview', el.dataset.id === id);
-      });
-      renderPreview(updated);
-    }
+    if (updated) renderPreview(updated);
   }
   showToast(state.bookmark.checked ? 'Tamamlandı olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
 }
