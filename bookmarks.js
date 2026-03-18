@@ -1039,8 +1039,10 @@ function setupEventListeners() {
     viewMode = 'feed';
     $('view-feed').classList.add('active');
     $('view-list').classList.remove('active');
+    selectedId = null;
     resetVisibleCount();
     renderGrid();
+    renderPreview(null);
   });
 
   $('view-list').addEventListener('click', () => {

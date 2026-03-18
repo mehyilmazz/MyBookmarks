@@ -1496,6 +1496,7 @@ body {
   display: grid;
   grid-template-columns: 2fr 3fr;
   gap: 0;
+  margin-top: calc(var(--header-h) + var(--filter-bar-h));
   height: calc(100vh - var(--header-h) - var(--filter-bar-h));
   overflow: hidden;
 }
