@@ -168,7 +168,8 @@ function normalizeBookmark(item) {
     createdAt,
     checked: typeof item.checked === 'boolean' ? item.checked : false,
     note: typeof item.note === 'string' ? item.note.trim() : '',
-    tags: sanitizeTags(item.tags)
+    tags: sanitizeTags(item.tags),
+    thumbnail: typeof item.thumbnail === 'string' && item.thumbnail.trim() ? item.thumbnail.trim() : null
   };
 }
 
