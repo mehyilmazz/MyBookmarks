@@ -323,28 +323,12 @@ function renderPreview(bm) {
     `;
   }
 
-  const tagsHTML = bm.tags.length > 0
-    ? `<div class="pv-tags">${bm.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`
-    : '';
-
-  const noteHTML = bm.note
-    ? `<div class="pv-note-section"><div class="pv-note-label">Not</div><div class="pv-note-text">${escapeHtml(bm.note)}</div></div>`
-    : '';
-
   const doneLabel = bm.checked ? 'Bekliyor' : 'Tamamlandı';
 
   DOM.previewCard.innerHTML = `
     ${thumbHTML}
     <h2 class="pv-title" title="${escapeAttribute(bm.title)}">${escapeHtml(bm.title)}</h2>
     <div class="pv-url">🔗 <a href="${escapeAttribute(bm.url)}" target="_blank" rel="noopener">${escapeHtml(shortUrl(bm.url, 60))}</a></div>
-    <div class="pv-meta">
-      <span class="pv-meta-item">📅 ${escapeHtml(formatDate(bm.createdAt))}</span>
-      <span class="pv-plat-badge pv-plat-badge--${platCls}">${PLAT_ICONS[bm.platform] || ''}${escapeHtml(bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform === 'Diğer' ? 'Web' : bm.platform)}</span>
-      ${bm.checked ? '<span class="pv-meta-item" style="color:#4ade80">✓ Tamamlandı</span>' : ''}
-    </div>
-    <div class="pv-divider"></div>
-    ${noteHTML}
-    ${tagsHTML}
     <div class="pv-actions">
       <button class="pv-btn pv-btn--primary" data-action="open">
         <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0v-5z" clip-rule="evenodd"/></svg>
