@@ -10,13 +10,16 @@
 // ─── Durum ────────────────────────────────────────────────────────────────
 
 let allBookmarks  = [];         // Tüm kayıtlar
-let selectedIds   = new Set();  // Seçili kayıt ID'leri
+let selectedIds   = new Set();  // Seçili kayıt ID'leri (bulk)
 let isSelectMode  = false;      // Toplu seçim modu aktif mi?
 let viewMode      = 'list';     // 'list' | 'feed'
+let selectedId    = null;       // Önizleme panelinde gösterilen kayıt ID'si
+const LIST_PAGE_SIZE = 25;
+let visibleCount  = LIST_PAGE_SIZE; // Listede gösterilen kayıt sayısı
 let activeFilters = {
   search:   '',
-  platform: '',     // '' | 'X/Twitter' | 'YouTube' | 'Diğer'
-  status:   'pending',  // '' | 'pending' | 'done'
+  platform: '',
+  status:   'pending',
   sort:     'newest'
 };
 
@@ -24,9 +27,11 @@ let activeFilters = {
 
 const $ = id => document.getElementById(id);
 const DOM = {
-  grid:          $('card-grid'),
+  bmList:        $('bm-list'),
   emptyState:    $('empty-state'),
   resultsLabel:  $('results-label'),
+  previewEmpty:  $('preview-empty'),
+  previewCard:   $('preview-card'),
   searchInput:   $('search-input'),
   sortSelect:    $('sort-select'),
   bulkBar:       $('bulk-bar'),
@@ -38,27 +43,23 @@ const DOM = {
   selectControls: $('select-controls'),
   importFile:    $('import-file'),
   stats: {
-    total:   $('s-total'),
-    pending: $('s-pending'),
-    done:    $('s-done'),
-    tw:      $('s-tw'),
-    yt:      $('s-yt'),
-    other:   $('s-other')
+    tw:    $('s-tw'),
+    yt:    $('s-yt'),
+    other: $('s-other')
   }
 };
 
 // ─── Başlatma ─────────────────────────────────────────────────────────────
 
 async function init() {
-  const data = await chrome.storage.local.get('bookmarks');
-  allBookmarks = data.bookmarks || [];
+  await loadState();
   renderAll();
   setupEventListeners();
 
   // Dışarıdan yapılan değişiklikleri (popup, context menu) yakala
-  chrome.storage.onChanged.addListener((changes, area) => {
+  chrome.storage.onChanged.addListener(async (changes, area) => {
     if (area === 'local' && changes.bookmarks) {
-      allBookmarks = changes.bookmarks.newValue || [];
+      await loadState();
       for (const id of selectedIds) {
         if (!allBookmarks.find(b => b.id === id)) selectedIds.delete(id);
       }
@@ -69,40 +70,30 @@ async function init() {
   // Sekme tekrar aktif olduğunda storage'dan taze veriyi yükle
   document.addEventListener('visibilitychange', async () => {
     if (document.hidden) return;
-    const data = await chrome.storage.local.get('bookmarks');
-    allBookmarks = data.bookmarks || [];
+    await loadState();
     renderAll();
   });
+}
+
+function resetVisibleCount() {
+  visibleCount = LIST_PAGE_SIZE;
+}
+
+async function loadState() {
+  const state = await BookmarkStore.getState();
+  allBookmarks = state.bookmarks;
 }
 
 // ─── Filtreleme & Sıralama ────────────────────────────────────────────────
 
 function getFilteredBase() {
-  let list = [...allBookmarks];
-  const { search, status, sort } = activeFilters;
-
-  if (status === 'pending') list = list.filter(b => !b.checked);
-  if (status === 'done')    list = list.filter(b =>  b.checked);
-
-  if (search) {
-    const q = search.toLowerCase();
-    list = list.filter(b =>
-      b.title.toLowerCase().includes(q)         ||
-      b.url.toLowerCase().includes(q)            ||
-      (b.note || '').toLowerCase().includes(q)   ||
-      b.tags.some(t => t.toLowerCase().includes(q))
-    );
-  }
-
-  switch (sort) {
-    case 'newest':  list.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)); break;
-    case 'oldest':  list.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt)); break;
-    case 'platform': list.sort((a,b) => a.platform.localeCompare(b.platform, 'tr'));   break;
-    case 'pending': list.sort((a,b) => (a.checked?1:0) - (b.checked?1:0));            break;
-    case 'title':   list.sort((a,b) => a.title.localeCompare(b.title, 'tr'));          break;
-  }
-
-  return list;
+  return BookmarkStore.sortBookmarks(
+    BookmarkStore.filterBookmarks(allBookmarks, {
+      search: activeFilters.search,
+      status: activeFilters.status
+    }),
+    activeFilters.sort
+  );
 }
 
 function getFiltered() {
@@ -121,19 +112,13 @@ function renderAll() {
 }
 
 function updateStats() {
-  const total   = allBookmarks.length;
-  const done    = allBookmarks.filter(b => b.checked).length;
-  const pending = total - done;
-  const tw      = allBookmarks.filter(b => b.platform === 'X/Twitter').length;
-  const yt      = allBookmarks.filter(b => b.platform === 'YouTube').length;
-  const other   = allBookmarks.filter(b => b.platform === 'Diğer').length;
+  const tw    = allBookmarks.filter(b => b.platform === 'X/Twitter').length;
+  const yt    = allBookmarks.filter(b => b.platform === 'YouTube').length;
+  const other = allBookmarks.filter(b => b.platform === 'Diğer').length;
 
-  if (DOM.stats.total)   DOM.stats.total.textContent   = total;
-  if (DOM.stats.pending) DOM.stats.pending.textContent = pending;
-  if (DOM.stats.done)    DOM.stats.done.textContent    = done;
-  if (DOM.stats.tw)      DOM.stats.tw.textContent      = tw;
-  if (DOM.stats.yt)      DOM.stats.yt.textContent      = yt;
-  if (DOM.stats.other)   DOM.stats.other.textContent   = other;
+  if (DOM.stats.tw)    DOM.stats.tw.textContent    = tw;
+  if (DOM.stats.yt)    DOM.stats.yt.textContent    = yt;
+  if (DOM.stats.other) DOM.stats.other.textContent = other;
 }
 
 function renderGrid() {
@@ -158,7 +143,7 @@ function renderGrid() {
   const other = base.filter(b => b.platform === 'Diğer');
 
   const total = (showTw ? tw.length : 0) + (showYt ? yt.length : 0) + (showOther ? other.length : 0);
-  if (DOM.resultsLabel) DOM.resultsLabel.textContent = `${total} kayıt`;
+  if (DOM.resultsLabel) DOM.resultsLabel.textContent = `${total} kayıt • liste görünümü 25'er artarak yüklenir`;
 
   if (total === 0) {
     DOM.emptyState.style.display = 'flex';
@@ -217,13 +202,34 @@ function buildPlatformSection(platform, items) {
   </tr></thead>`;
 
   const tbody = document.createElement('tbody');
-  items.slice(0, 25).forEach((bm, i) => {
+  const visibleCount = visibleCounts[platform] || LIST_PAGE_SIZE;
+  const visibleItems = items.slice(0, visibleCount);
+
+  visibleItems.forEach((bm, i) => {
     const { row, editRow } = buildTableRow(bm, i);
     tbody.appendChild(row);
     tbody.appendChild(editRow);
   });
   table.appendChild(tbody);
   section.appendChild(table);
+
+  if (items.length > visibleCount) {
+    const footer = document.createElement('div');
+    footer.className = 'platform-section__footer';
+
+    const button = document.createElement('button');
+    button.className = 'load-more-btn';
+    button.type = 'button';
+    button.textContent = `Daha fazla göster (${items.length - visibleCount} kaldı)`;
+    button.addEventListener('click', () => {
+      visibleCounts[platform] = visibleCount + LIST_PAGE_SIZE;
+      renderGrid();
+    });
+
+    footer.appendChild(button);
+    section.appendChild(footer);
+  }
+
   return section;
 }
 
@@ -231,7 +237,7 @@ function buildPlatformSection(platform, items) {
 
 function renderFeed() {
   const filtered = getFiltered();
-  if (DOM.resultsLabel) DOM.resultsLabel.textContent = `${filtered.length} kayıt`;
+  if (DOM.resultsLabel) DOM.resultsLabel.textContent = `${filtered.length} kayıt • feed görünümü tüm sonuçları gösterir`;
   if (filtered.length === 0) {
     DOM.emptyState.style.display = 'flex';
     DOM.grid.style.display       = 'none';
@@ -246,15 +252,51 @@ function renderFeed() {
   DOM.grid.appendChild(list);
 }
 
-function getYouTubeThumb(url) {
+function getPlatformClass(platform) {
+  return platform === 'X/Twitter' ? 'tw' : platform === 'YouTube' ? 'yt' : 'other';
+}
+
+function getSiteMeta(url, platform) {
+  const fallbackLabel = platform === 'X/Twitter' ? 'TW' : platform === 'YouTube' ? 'YT' : 'WB';
+
   try {
-    const u = new URL(url);
-    let id = null;
-    if (u.hostname.includes('youtube.com')) id = u.searchParams.get('v');
-    else if (u.hostname === 'youtu.be')     id = u.pathname.slice(1).split('?')[0];
-    if (id) return `https://img.youtube.com/vi/${id}/mqdefault.jpg`;
-  } catch {}
-  return null;
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    const letters = hostname.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase();
+    return {
+      host: hostname,
+      initials: letters || fallbackLabel
+    };
+  } catch {
+    return {
+      host: 'local',
+      initials: fallbackLabel
+    };
+  }
+}
+
+function buildSiteBadge(url, platform, extraClass = '') {
+  const meta = getSiteMeta(url, platform);
+  const platformClass = getPlatformClass(platform);
+
+  return `<span class="site-badge ${extraClass} site-badge--${platformClass}" title="${escapeAttribute(meta.host)}">${escapeHtml(meta.initials)}</span>`;
+}
+
+function buildFeedPreview(bm) {
+  const meta = getSiteMeta(bm.url, bm.platform);
+  const platformClass = getPlatformClass(bm.platform);
+  const platformLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
+
+  return `
+    <div class="feed-item__thumb-wrap feed-item__thumb-wrap--placeholder">
+      <div class="feed-item__thumb-placeholder feed-thumb--${platformClass}">
+        ${buildSiteBadge(bm.url, bm.platform, 'feed-thumb-badge')}
+        <div class="feed-item__thumb-meta">
+          <strong>${escapeHtml(platformLabel)}</strong>
+          <span>${escapeHtml(meta.host)}</span>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function buildFeedItem(bm, index) {
@@ -264,14 +306,8 @@ function buildFeedItem(bm, index) {
   item.dataset.platform = bm.platform;
   item.style.animationDelay = `${Math.min(index * 8, 160)}ms`;
 
-  const faviconURL = (() => {
-    try { return `https://www.google.com/s2/favicons?domain=${new URL(bm.url).origin}&sz=32`; }
-    catch { return null; }
-  })();
-
   const platLabel = bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform;
-  const platCls   = bm.platform === 'X/Twitter' ? 'tw' : bm.platform === 'YouTube' ? 'yt' : 'other';
-  const thumbURL  = bm.platform === 'YouTube' ? getYouTubeThumb(bm.url) : null;
+  const platCls   = getPlatformClass(bm.platform);
 
   const PLAT_ICONS = {
     'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
@@ -282,9 +318,7 @@ function buildFeedItem(bm, index) {
   item.innerHTML = `
     <div class="feed-item__header">
       <div class="feed-item__plat-row">
-        ${faviconURL
-          ? `<img class="feed-item__favicon" src="${faviconURL}" alt="" loading="lazy">`
-          : `<span class="feed-item__plat-icon feed-plat--${platCls}">${PLAT_ICONS[bm.platform] || ''}</span>`}
+        ${buildSiteBadge(bm.url, bm.platform)}
         <span class="feed-item__plat-name feed-plat--${platCls}">${escapeHtml(platLabel)}</span>
       </div>
       <div class="feed-item__header-end">
@@ -295,7 +329,7 @@ function buildFeedItem(bm, index) {
       </div>
     </div>
     <div class="feed-item__title">${escapeHtml(bm.title)}</div>
-    ${thumbURL ? `<div class="feed-item__thumb-wrap"><img class="feed-item__thumb" src="${thumbURL}" alt="" loading="lazy"></div>` : ''}
+    ${buildFeedPreview(bm)}
     <div class="feed-item__url">${escapeHtml(shortUrl(bm.url))}</div>
   `;
 
@@ -309,13 +343,6 @@ function buildFeedItem(bm, index) {
     e.stopPropagation();
     if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) deleteBookmark(bm.id);
   });
-
-  const favicon = item.querySelector('.feed-item__favicon');
-  if (favicon) favicon.addEventListener('error', () => favicon.remove(), { once: true });
-
-  const thumb = item.querySelector('.feed-item__thumb');
-  if (thumb) thumb.addEventListener('error', () => thumb.closest('.feed-item__thumb-wrap')?.remove(), { once: true });
-
   return item;
 }
 
@@ -353,19 +380,14 @@ function buildCard(bm, index) {
     `<span class="tag tag-removable">${escapeHtml(t)}<button class="tag-rm" data-i="${i}" type="button">×</button></span>`
   ).join('');
 
-  const faviconURL = (() => {
-    try { return `https://www.google.com/s2/favicons?domain=${new URL(bm.url).origin}&sz=32`; }
-    catch { return null; }
-  })();
-
   card.innerHTML = `
     <div class="card-inner">
 
       <!-- Body: favicon + title + url (main content) -->
       <div class="card-body">
         <div class="card-favicon-row">
-          ${faviconURL ? `<img class="favicon" src="${faviconURL}" alt="" loading="lazy">` : ''}
-          <h3 class="card-title" title="${escapeHtml(bm.title)}">${escapeHtml(bm.title)}</h3>
+          ${buildSiteBadge(bm.url, bm.platform, 'site-badge--card')}
+          <h3 class="card-title" title="${escapeAttribute(bm.title)}">${escapeHtml(bm.title)}</h3>
         </div>
       </div>
 
@@ -424,11 +446,6 @@ function buildCard(bm, index) {
 // ─── Tablo Satırı Oluşturma (Liste Görünümü) ──────────────────────────────
 
 function buildTableRow(bm, index) {
-  const faviconURL = (() => {
-    try { return `https://www.google.com/s2/favicons?domain=${new URL(bm.url).origin}&sz=32`; }
-    catch { return null; }
-  })();
-
   const editTagsHTML = bm.tags.map((t, i) =>
     `<span class="tag tag-removable">${escapeHtml(t)}<button class="tag-rm" data-i="${i}" type="button">×</button></span>`
   ).join('');
@@ -441,8 +458,8 @@ function buildTableRow(bm, index) {
   row.innerHTML = `
     <td class="col-title">
       <div class="row-title-inner">
-        ${faviconURL ? `<img class="favicon" src="${faviconURL}" alt="" loading="lazy">` : ''}
-        <span class="row-title-text" title="${escapeHtml(bm.title)}">${escapeHtml(bm.title)}</span>
+        ${buildSiteBadge(bm.url, bm.platform, 'site-badge--row')}
+        <span class="row-title-text" title="${escapeAttribute(bm.title)}">${escapeHtml(bm.title)}</span>
       </div>
     </td>
     <td class="col-date">${formatDate(bm.createdAt)}</td>
@@ -491,10 +508,6 @@ function bindRowEvents(row, editRow, bm) {
   const doAdd    = () => { addTag(id, tagInput.value); tagInput.value = ''; };
   editRow.querySelector('.btn-add-tag').addEventListener('click', doAdd);
   tagInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
-
-  const favicon = row.querySelector('.favicon');
-  if (favicon) favicon.addEventListener('error', () => favicon.remove(), { once: true });
-
   editRow.querySelector('.edit-tags-list')?.addEventListener('click', e => {
     if (e.target.classList.contains('tag-rm')) removeTag(id, Number(e.target.dataset.i));
   });
@@ -575,10 +588,6 @@ function bindCardEvents(card, bm) {
   card.querySelector('.btn-add-tag').addEventListener('click', doAdd);
   tagInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
 
-  // Favicon yüklenemezse DOM'dan kaldır (inline onerror CSP'ye aykırı)
-  const favicon = card.querySelector('.favicon');
-  if (favicon) favicon.addEventListener('error', () => favicon.remove(), { once: true });
-
   // Tag sil (delegation)
   card.querySelector('.edit-tags-list')?.addEventListener('click', e => {
     if (e.target.classList.contains('tag-rm')) {
@@ -626,51 +635,48 @@ function updateBulkBar() {
 // ─── CRUD ────────────────────────────────────────────────────────────────
 
 async function persistBookmarks() {
-  await chrome.storage.local.set({ bookmarks: allBookmarks });
+  const state = await BookmarkStore.commitState(null, allBookmarks);
+  allBookmarks = state.bookmarks;
 }
 
 async function deleteBookmark(id) {
-  allBookmarks = allBookmarks.filter(b => b.id !== id);
+  const state = await BookmarkStore.deleteBookmark(id);
+  allBookmarks = state.bookmarks;
   selectedIds.delete(id);
-  await persistBookmarks();
   renderAll();
   showToast('Kayıt silindi.', 'info');
 }
 
 async function toggleChecked(id) {
-  const bm = allBookmarks.find(b => b.id === id);
-  if (!bm) return;
-  bm.checked = !bm.checked;
-  await persistBookmarks();
+  const state = await BookmarkStore.toggleChecked(id);
+  if (!state.success) return;
+  allBookmarks = state.bookmarks;
   renderAll();
-  showToast(bm.checked ? 'Tamamlandı olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
+  showToast(state.bookmark.checked ? 'Tamamlandı olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
 }
 
 async function updateNote(id, note) {
-  const bm = allBookmarks.find(b => b.id === id);
-  if (!bm) return;
-  bm.note = note.trim();
-  await persistBookmarks();
+  const state = await BookmarkStore.updateNote(id, note);
+  if (!state.success) return;
+  allBookmarks = state.bookmarks;
   renderAll();
   showToast('Not kaydedildi.', 'success');
 }
 
 async function addTag(id, tag) {
-  const bm = allBookmarks.find(b => b.id === id);
-  if (!bm) return;
-  const t = tag.trim();
-  if (!t) return;
-  if (bm.tags.includes(t)) { showToast('Bu tag zaten ekli.', 'warning'); return; }
-  bm.tags.push(t);
-  await persistBookmarks();
+  const state = await BookmarkStore.addTag(id, tag);
+  if (!state.success) {
+    if (state.reason === 'duplicate-tag') showToast('Bu tag zaten ekli.', 'warning');
+    return;
+  }
+  allBookmarks = state.bookmarks;
   renderAll();
 }
 
 async function removeTag(id, idx) {
-  const bm = allBookmarks.find(b => b.id === id);
-  if (!bm) return;
-  bm.tags.splice(idx, 1);
-  await persistBookmarks();
+  const state = await BookmarkStore.removeTag(id, idx);
+  if (!state.success) return;
+  allBookmarks = state.bookmarks;
   renderAll();
 }
 
@@ -678,19 +684,20 @@ async function removeTag(id, idx) {
 
 async function bulkSetChecked(checked) {
   if (!selectedIds.size) return;
-  allBookmarks.forEach(b => { if (selectedIds.has(b.id)) b.checked = checked; });
-  await persistBookmarks();
+  const count = selectedIds.size;
+  const state = await BookmarkStore.bulkSetChecked([...selectedIds], checked);
+  allBookmarks = state.bookmarks;
   renderAll();
-  showToast(`${selectedIds.size} kayıt ${checked ? 'tamamlandı' : 'bekliyor'} olarak işaretlendi.`, 'success');
+  showToast(`${count} kayıt ${checked ? 'tamamlandı' : 'bekliyor'} olarak işaretlendi.`, 'success');
 }
 
 async function bulkDelete() {
   if (!selectedIds.size) return;
   const count = selectedIds.size;
   if (!confirm(`${count} kaydı silmek istediğinize emin misiniz?`)) return;
-  allBookmarks = allBookmarks.filter(b => !selectedIds.has(b.id));
+  const state = await BookmarkStore.bulkDelete([...selectedIds]);
+  allBookmarks = state.bookmarks;
   selectedIds.clear();
-  await persistBookmarks();
   renderAll();
   showToast(`${count} kayıt silindi.`, 'info');
 }
@@ -731,25 +738,21 @@ function importData(file) {
     try { parsed = JSON.parse(target.result); }
     catch { showToast('Geçersiz JSON dosyası!', 'error'); return; }
 
-    if (!Array.isArray(parsed)) { showToast('Hatalı format: dizi bekleniyor.', 'error'); return; }
+    const result = await BookmarkStore.importBookmarks(parsed);
+    if (!result.success && result.added === 0) {
+      const message = result.reason === 'invalid-format'
+        ? 'Hatalı format: dizi bekleniyor.'
+        : 'Geçerli kayıt bulunamadı.';
+      showToast(message, 'error');
+      return;
+    }
 
-    const valid   = parsed.filter(validateBookmark);
-    const invalid = parsed.length - valid.length;
-    if (!valid.length) { showToast('Geçerli kayıt bulunamadı.', 'error'); return; }
-
-    const existingUrls = new Set(allBookmarks.map(b => b.url));
-    const newOnes      = valid.filter(b => !existingUrls.has(b.url));
-    const dupes        = valid.length - newOnes.length;
-
-    allBookmarks = [...newOnes, ...allBookmarks].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-    await persistBookmarks();
+    allBookmarks = result.bookmarks;
     renderAll();
 
-    const parts = [`${newOnes.length} kayıt içe aktarıldı.`];
-    if (dupes)   parts.push(`${dupes} tekrar atlandı.`);
-    if (invalid) parts.push(`${invalid} geçersiz yoksayıldı.`);
+    const parts = [`${result.added} kayıt içe aktarıldı.`];
+    if (result.duplicates) parts.push(`${result.duplicates} tekrar atlandı.`);
+    if (result.invalid) parts.push(`${result.invalid} geçersiz yoksayıldı.`);
     showToast(parts.join(' '), 'success');
   };
   reader.onerror = () => showToast('Dosya okunamadı.', 'error');
@@ -776,6 +779,7 @@ function setupEventListeners() {
   // Arama
   DOM.searchInput.addEventListener('input', () => {
     activeFilters.search = DOM.searchInput.value;
+    resetVisibleCounts();
     renderGrid();
   });
 
@@ -798,6 +802,7 @@ function setupEventListeners() {
   // Sıralama
   DOM.sortSelect.addEventListener('change', () => {
     activeFilters.sort = DOM.sortSelect.value;
+    resetVisibleCounts();
     renderGrid();
   });
 
@@ -808,6 +813,7 @@ function setupEventListeners() {
     $('platform-filters').querySelectorAll('.fbar-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilters.platform = btn.dataset.platform ?? '';
+    resetVisibleCounts();
     renderGrid();
   });
 
@@ -818,6 +824,7 @@ function setupEventListeners() {
     $('status-filters').querySelectorAll('.fbar-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilters.status = btn.dataset.status ?? '';
+    resetVisibleCounts();
     renderGrid();
   });
 
@@ -845,6 +852,7 @@ function setupEventListeners() {
     viewMode = 'feed';
     $('view-feed').classList.add('active');
     $('view-list').classList.remove('active');
+    resetVisibleCounts();
     renderGrid();
   });
 
@@ -852,6 +860,7 @@ function setupEventListeners() {
     viewMode = 'list';
     $('view-list').classList.add('active');
     $('view-feed').classList.remove('active');
+    resetVisibleCounts();
     renderGrid();
   });
 
@@ -876,4 +885,3 @@ function setupEventListeners() {
 // ─── Başlat ───────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', init);
-
