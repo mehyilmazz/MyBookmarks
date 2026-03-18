@@ -166,7 +166,7 @@ function renderListView() {
     const btn = document.createElement('button');
     btn.className = 'load-more-btn';
     btn.type = 'button';
-    btn.textContent = `Daha fazla göster (${filtered.length - visibleCount} kaldı)`;
+    btn.textContent = `Daha Fazla Yükle (${filtered.length - visibleCount} kaldı)`;
     btn.addEventListener('click', () => {
       visibleCount += LIST_PAGE_SIZE;
       renderListView();
@@ -316,9 +316,10 @@ function renderPreview(bm) {
   DOM.previewCard.innerHTML = `
     ${thumbHTML}
     <h2 class="pv-title" title="${escapeAttribute(bm.title)}">${escapeHtml(bm.title)}</h2>
-    <div class="pv-url"><a href="${escapeAttribute(bm.url)}" target="_blank" rel="noopener">${escapeHtml(shortUrl(bm.url, 60))}</a></div>
+    <div class="pv-url">🔗 <a href="${escapeAttribute(bm.url)}" target="_blank" rel="noopener">${escapeHtml(shortUrl(bm.url, 60))}</a></div>
     <div class="pv-meta">
       <span class="pv-meta-item">📅 ${escapeHtml(formatDate(bm.createdAt))}</span>
+      <span class="pv-plat-badge pv-plat-badge--${platCls}">${PLAT_ICONS[bm.platform] || ''}${escapeHtml(bm.platform === 'X/Twitter' ? 'Twitter' : bm.platform === 'Diğer' ? 'Web' : bm.platform)}</span>
       ${bm.checked ? '<span class="pv-meta-item" style="color:#4ade80">✓ Tamamlandı</span>' : ''}
     </div>
     <div class="pv-divider"></div>
