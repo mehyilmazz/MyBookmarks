@@ -370,20 +370,6 @@ function renderPreview(bm) {
     }, { once: true });
   }
 
-  DOM.previewCard.querySelector('[data-action="open"]').addEventListener('click', () => {
-    chrome.tabs.create({ url: bm.url });
-  });
-
-  DOM.previewCard.querySelector('[data-action="toggle-done"]').addEventListener('click', () => {
-    toggleCheckedAndReselect(bm.id);
-  });
-
-  DOM.previewCard.querySelector('[data-action="delete"]').addEventListener('click', () => {
-    if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) {
-      selectedId = null;
-      deleteBookmark(bm.id);
-    }
-  });
 }
 
 function getPlatformClass(platform) {
