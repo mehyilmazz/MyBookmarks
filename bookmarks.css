@@ -1579,16 +1579,20 @@ body {
   text-decoration: line-through;
 }
 
-.bm-li-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+/* Platform logo icon (replaces colored dot) */
+.bm-li-platform {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  border-radius: 4px;
+  opacity: 0.85;
 }
-
-.bm-li-dot--tw    { background: #1d9bf0; }
-.bm-li-dot--yt    { background: #ff4040; }
-.bm-li-dot--other { background: #a78bfa; }
+.bm-li-platform--tw    { color: #1d9bf0; }
+.bm-li-platform--yt    { color: #ff4040; }
+.bm-li-platform--other { color: #94a3b8; }
 
 .bm-li-body {
   flex: 1;
@@ -1596,7 +1600,9 @@ body {
 }
 
 .bm-li-title {
+  font-family: 'Inter', system-ui, sans-serif;
   font-size: 12.5px;
+  font-weight: 450;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -1604,49 +1610,44 @@ body {
   line-height: 1.4;
 }
 
-.bm-li-meta {
+/* Inline action buttons (right side) */
+.bm-li-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.bm-li-date {
-  font-size: 10.5px;
-  color: var(--text-3);
-}
-
-.bm-li-status {
-  width: 12px;
-  height: 12px;
+  gap: 2px;
   flex-shrink: 0;
-  color: var(--text-3);
-}
-
-.bm-li-status--done {
-  color: #4ade80;
-}
-
-.bm-li-delete {
   opacity: 0;
+  transition: opacity 100ms;
+}
+
+.bm-list-item:hover .bm-li-actions {
+  opacity: 1;
+}
+
+.bm-li-act {
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-3);
-  padding: 3px;
-  border-radius: 4px;
+  padding: 4px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
-  transition: opacity 100ms, color 100ms;
-  flex-shrink: 0;
+  transition: background 100ms, color 100ms;
 }
 
-.bm-list-item:hover .bm-li-delete {
-  opacity: 1;
+.bm-li-act:hover {
+  background: var(--surface-3, rgba(255,255,255,.08));
+  color: var(--text);
 }
 
-.bm-li-delete:hover {
+.bm-li-act--done {
+  color: #4ade80;
+}
+
+.bm-li-act--del:hover {
   color: #ff4040;
+  background: rgba(255,64,64,.1);
 }
 
 /* Checkbox — selection mode */
