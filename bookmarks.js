@@ -122,134 +122,128 @@ function updateStats() {
 }
 
 function renderGrid() {
-  DOM.grid.innerHTML = '';
-
   if (viewMode === 'feed') {
+    DOM.bmList.innerHTML = '';
     renderFeed();
     return;
   }
-
-  // ─── Liste görünümü: 3 platform tablosu ─────────────────────────────
-  DOM.grid.style.display = 'block';
-
-  const base           = getFilteredBase();
-  const activePlat     = activeFilters.platform;
-  const showTw         = !activePlat || activePlat === 'X/Twitter';
-  const showYt         = !activePlat || activePlat === 'YouTube';
-  const showOther      = !activePlat || activePlat === 'Diğer';
-
-  const tw    = base.filter(b => b.platform === 'X/Twitter');
-  const yt    = base.filter(b => b.platform === 'YouTube');
-  const other = base.filter(b => b.platform === 'Diğer');
-
-  const total = (showTw ? tw.length : 0) + (showYt ? yt.length : 0) + (showOther ? other.length : 0);
-  if (DOM.resultsLabel) DOM.resultsLabel.textContent = `${total} kayıt • liste görünümü 25'er artarak yüklenir`;
-
-  if (total === 0) {
-    DOM.emptyState.style.display = 'flex';
-    DOM.grid.style.display       = 'none';
-    return;
-  }
-  DOM.emptyState.style.display = 'none';
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'platform-sections';
-
-  // Twitter + YouTube yan yana
-  if (showTw || showYt) {
-    const row = document.createElement('div');
-    row.className = 'platform-row';
-    if (showTw) row.appendChild(buildPlatformSection('X/Twitter', tw));
-    if (showYt) row.appendChild(buildPlatformSection('YouTube',   yt));
-    wrapper.appendChild(row);
-  }
-
-  // Diğer — tam genişlik
-  if (showOther) {
-    const sec = buildPlatformSection('Diğer', other);
-    sec.classList.add('platform-section--full');
-    wrapper.appendChild(sec);
-  }
-
-  DOM.grid.appendChild(wrapper);
+  renderListView();
 }
 
-function buildPlatformSection(platform, items) {
-  const ICONS = {
-    'X/Twitter': `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.632 5.906-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117Z"/></svg>`,
-    'YouTube':   `<svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
-    'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
-  };
+function renderListView() {
+  DOM.bmList.innerHTML = '';
 
-  const section = document.createElement('div');
-  section.className = 'platform-section';
+  const filtered = getFiltered();
 
-  const label = platform === 'X/Twitter' ? 'Twitter' : platform;
-  section.innerHTML = `
-    <div class="platform-section__header">
-      <span class="platform-section__icon plat-icon--${platform === 'X/Twitter' ? 'tw' : platform === 'YouTube' ? 'yt' : 'other'}">${ICONS[platform] || ''}</span>
-      <span class="platform-section__label">${label}</span>
-      <span class="platform-section__count">${items.length}</span>
-    </div>
-  `;
-
-  const table = document.createElement('table');
-  table.className = 'bm-table';
-  table.innerHTML = `<thead><tr>
-    <th class="col-title">Başlık</th>
-    <th class="col-date">Tarih</th>
-    <th class="col-actions"></th>
-  </tr></thead>`;
-
-  const tbody = document.createElement('tbody');
-  const visibleCount = visibleCounts[platform] || LIST_PAGE_SIZE;
-  const visibleItems = items.slice(0, visibleCount);
-
-  visibleItems.forEach((bm, i) => {
-    const { row, editRow } = buildTableRow(bm, i);
-    tbody.appendChild(row);
-    tbody.appendChild(editRow);
-  });
-  table.appendChild(tbody);
-  section.appendChild(table);
-
-  if (items.length > visibleCount) {
-    const footer = document.createElement('div');
-    footer.className = 'platform-section__footer';
-
-    const button = document.createElement('button');
-    button.className = 'load-more-btn';
-    button.type = 'button';
-    button.textContent = `Daha fazla göster (${items.length - visibleCount} kaldı)`;
-    button.addEventListener('click', () => {
-      visibleCounts[platform] = visibleCount + LIST_PAGE_SIZE;
-      renderGrid();
-    });
-
-    footer.appendChild(button);
-    section.appendChild(footer);
+  if (DOM.resultsLabel) {
+    DOM.resultsLabel.textContent = `${filtered.length} kayıt`;
   }
 
-  return section;
+  if (filtered.length === 0) {
+    DOM.emptyState.style.display = 'flex';
+    DOM.bmList.style.display     = 'none';
+    if (selectedId && !filtered.find(b => b.id === selectedId)) {
+      selectedId = null;
+      renderPreview(null);
+    }
+    return;
+  }
+
+  DOM.emptyState.style.display = 'none';
+  DOM.bmList.style.display     = 'block';
+
+  if (selectedId && !filtered.find(b => b.id === selectedId)) {
+    selectedId = null;
+    renderPreview(null);
+  }
+
+  const visible = filtered.slice(0, visibleCount);
+  visible.forEach((bm, i) => DOM.bmList.appendChild(buildListItem(bm, i)));
+
+  if (filtered.length > visibleCount) {
+    const footer = document.createElement('div');
+    footer.className = 'bm-list-footer';
+    const btn = document.createElement('button');
+    btn.className = 'load-more-btn';
+    btn.type = 'button';
+    btn.textContent = `Daha fazla göster (${filtered.length - visibleCount} kaldı)`;
+    btn.addEventListener('click', () => {
+      visibleCount += LIST_PAGE_SIZE;
+      renderListView();
+    });
+    footer.appendChild(btn);
+    DOM.bmList.appendChild(footer);
+  }
+}
+
+function buildListItem(bm, index) {
+  const platCls = getPlatformClass(bm.platform);
+
+  const item = document.createElement('div');
+  item.className = [
+    'bm-list-item',
+    bm.checked ? 'is-done' : '',
+    selectedIds.has(bm.id) ? 'is-checked-select' : '',
+    bm.id === selectedId  ? 'is-selected-preview' : ''
+  ].filter(Boolean).join(' ');
+  item.dataset.id = bm.id;
+  item.style.animationDelay = `${Math.min(index * 10, 150)}ms`;
+
+  const statusIcon = bm.checked
+    ? `<svg class="bm-li-status bm-li-status--done" viewBox="0 0 16 16" fill="currentColor"><path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>`
+    : `<svg class="bm-li-status" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/></svg>`;
+
+  item.innerHTML = `
+    <div class="bm-li-checkbox" aria-hidden="true">
+      <svg viewBox="0 0 12 12" fill="currentColor" width="10" height="10"><path d="M10.28 1.28L3.989 7.575 1.695 5.28A1 1 0 0 0 .28 6.695l3 3a1 1 0 0 0 1.414 0l7-7A1 1 0 0 0 10.28 1.28z"/></svg>
+    </div>
+    <div class="bm-li-dot bm-li-dot--${platCls}"></div>
+    <div class="bm-li-body">
+      <div class="bm-li-title" title="${escapeAttribute(bm.title)}">${escapeHtml(bm.title)}</div>
+      <div class="bm-li-meta">
+        <span class="bm-li-date">${formatDate(bm.createdAt)}</span>
+        ${statusIcon}
+      </div>
+    </div>
+    <button class="bm-li-delete" title="Sil" type="button">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" clip-rule="evenodd"/></svg>
+    </button>
+  `;
+
+  item.addEventListener('click', e => {
+    if (e.target.closest('.bm-li-delete')) return;
+    if (isSelectMode) {
+      toggleSelect(bm.id, !selectedIds.has(bm.id));
+    } else {
+      selectBookmark(bm.id);
+    }
+  });
+
+  item.querySelector('.bm-li-delete').addEventListener('click', e => {
+    e.stopPropagation();
+    if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) deleteBookmark(bm.id);
+  });
+
+  return item;
 }
 
 // ─── Feed Görünümü ────────────────────────────────────────────────────────
 
 function renderFeed() {
   const filtered = getFiltered();
-  if (DOM.resultsLabel) DOM.resultsLabel.textContent = `${filtered.length} kayıt • feed görünümü tüm sonuçları gösterir`;
+  if (DOM.resultsLabel) DOM.resultsLabel.textContent = `${filtered.length} kayıt • feed görünümü`;
   if (filtered.length === 0) {
     DOM.emptyState.style.display = 'flex';
-    DOM.grid.style.display       = 'none';
+    DOM.bmList.style.display     = 'none';
     return;
   }
   DOM.emptyState.style.display = 'none';
-  DOM.grid.style.display = 'block';
+  DOM.bmList.style.display = 'block';
 
   const list = document.createElement('div');
   list.className = 'feed-list';
   filtered.forEach((bm, i) => list.appendChild(buildFeedItem(bm, i)));
-  DOM.grid.appendChild(list);
+  DOM.bmList.appendChild(list);
 }
 
 function getPlatformClass(platform) {
