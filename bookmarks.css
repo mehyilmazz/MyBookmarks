@@ -1565,6 +1565,10 @@ body {
   position: relative;
 }
 
+.bm-list-item + .bm-list-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .bm-list-item:hover {
   background: var(--surface-2);
 }
