@@ -50,6 +50,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action !== 'fetchOgImage') return false;
 
+  // Only fetch http/https URLs
+  if (!msg.url || !MyBookmarkUtils.isSupportedUrl(msg.url)) {
+    sendResponse({ thumbnail: null });
+    return true;
+  }
+
   fetch(msg.url, { redirect: 'follow' })
     .then(r => r.text())
     .then(html => {

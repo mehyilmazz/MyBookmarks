@@ -249,7 +249,7 @@
     return mutateState(storageArea, bookmarks => {
       const bm = bookmarks.find(b => b.id === id);
       if (!bm) return; // deleted before fetch completed — no-op
-      bm.thumbnail = thumbnailUrl;
+      bm.thumbnail = (typeof thumbnailUrl === 'string' && thumbnailUrl.trim()) ? thumbnailUrl.trim() : null;
     });
   }
 
