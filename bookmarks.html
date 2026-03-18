@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MyBookmark — Arşiv</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="bookmarks.css?v=14">
+  <link rel="stylesheet" href="bookmarks.css?v=15">
 </head>
 <body>
 
@@ -116,23 +113,49 @@
 
   </div>
 
-  <!-- ═══════════════════ MAIN ═══════════════════ -->
-  <main class="main">
+  <!-- ═══════════════════ APP BODY ═══════════════════ -->
+  <div class="app-body">
 
-    <div class="card-grid" id="card-grid"></div>
-
-    <div class="empty-state" id="empty-state" style="display:none">
-      <div class="empty-glyph">
-        <svg viewBox="0 0 64 64" fill="none">
-          <path d="M16 8C16 6.89543 16.8954 6 18 6H46C47.1046 6 48 6.89543 48 8V58L32 50L16 58V8Z"
-                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+    <!-- ── Sol Panel: MyBookmarks Listesi ── -->
+    <div class="panel-list" id="panel-list">
+      <div class="panel-list__header">
+        <div class="panel-list__title">
+          <svg class="panel-list__icon" viewBox="0 0 24 24" fill="none">
+            <path d="M5 4C5 3.44772 5.44772 3 6 3H18C18.5523 3 19 3.44772 19 4V21L12 17.5L5 21V4Z"
+                  fill="var(--accent)" stroke="var(--accent)" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>MyBookmarks</span>
+        </div>
+        <p id="results-label" class="results-label"></p>
       </div>
-      <p class="empty-title">Kayıt bulunamadı</p>
-      <p class="empty-sub">Filtrelerinizi değiştirin ya da arama terimini temizleyin</p>
+
+      <div class="bm-list" id="bm-list"></div>
+
+      <div class="empty-state" id="empty-state" style="display:none">
+        <div class="empty-glyph">
+          <svg viewBox="0 0 64 64" fill="none">
+            <path d="M16 8C16 6.89543 16.8954 6 18 6H46C47.1046 6 48 6.89543 48 8V58L32 50L16 58V8Z"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="empty-title">Kayıt bulunamadı</p>
+        <p class="empty-sub">Filtrelerinizi değiştirin ya da arama terimini temizleyin</p>
+      </div>
     </div>
 
-  </main>
+    <!-- ── Sağ Panel: Önizleme ── -->
+    <div class="panel-preview" id="panel-preview">
+      <div class="preview-empty" id="preview-empty">
+        <svg viewBox="0 0 24 24" fill="none" width="40" height="40">
+          <path d="M5 4C5 3.44772 5.44772 3 6 3H18C18.5523 3 19 3.44772 19 4V21L12 17.5L5 21V4Z"
+                stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <p>Bir kayıt seçin</p>
+      </div>
+      <div class="preview-card" id="preview-card" style="display:none"></div>
+    </div>
+
+  </div>
 
   <!-- ═══════════════════ BULK ACTION BAR ═══════════════════ -->
   <div class="bulk-bar" id="bulk-bar">
@@ -218,6 +241,7 @@
   </script>
 
   <script src="utils.js"></script>
-  <script src="bookmarks.js?v=14"></script>
+  <script src="store.js"></script>
+  <script src="bookmarks.js?v=15"></script>
 </body>
 </html>
