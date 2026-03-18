@@ -576,7 +576,7 @@ body {
   padding: 0 12px 12px;
 }
 
-.load-more-btn {
+.platform-section__footer .load-more-btn {
   width: 100%;
   border: 1px dashed var(--border-strong);
   background: rgba(255,255,255,0.02);
@@ -589,7 +589,7 @@ body {
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
-.load-more-btn:hover {
+.platform-section__footer .load-more-btn:hover {
   color: var(--text);
   background: rgba(255,255,255,0.04);
   border-color: var(--accent);
@@ -1676,7 +1676,7 @@ body {
   text-align: center;
 }
 
-.load-more-btn {
+.bm-list-footer .load-more-btn {
   background: none;
   border: 1px solid var(--border);
   border-radius: 7px;
@@ -1687,7 +1687,7 @@ body {
   transition: background 120ms, border-color 120ms;
 }
 
-.load-more-btn:hover {
+.bm-list-footer .load-more-btn:hover {
   background: var(--surface-2);
   border-color: var(--border-2);
 }
