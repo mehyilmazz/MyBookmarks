@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="bookmarks.css?v=18">
+  <link rel="stylesheet" href="bookmarks.css?v=22">
 </head>
 <body>
 
@@ -40,7 +40,7 @@
         <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
         İçe Aktar
       </button>
-      <button id="btn-export" class="ctrl-btn ctrl-btn--accent">
+      <button id="btn-export" class="ctrl-btn">
         <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
         Dışa Aktar
       </button>
@@ -77,6 +77,16 @@
       </button>
       <button class="fbar-btn fbar-btn--ok" data-status="done">
         <span class="fbar-dot"></span>Tamamlanan
+      </button>
+    </div>
+
+    <div class="filter-sep"></div>
+
+    <!-- Favoriler filtresi -->
+    <div class="filter-group">
+      <button class="fbar-btn fbar-btn--fav" id="fav-filter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Favorilerim
       </button>
     </div>
 
@@ -136,6 +146,9 @@
       </div>
     </div>
 
+    <!-- ── Panel Ayracı (Sürüklenebilir) ── -->
+    <div class="panel-resizer" id="panel-resizer" title="Paneli yeniden boyutlandır"></div>
+
     <!-- ── Sağ Panel: Önizleme ── -->
     <div class="panel-preview" id="panel-preview">
       <div class="preview-empty" id="preview-empty">
@@ -173,6 +186,9 @@
       <button class="bulk-btn bulk-btn--ghost" id="bulk-cancel">İptal</button>
     </div>
   </div>
+
+  <!-- Kebab menü (portal — scroll kırpmasından kaçmak için body'de) -->
+  <div id="li-dropdown" class="li-dropdown" style="display:none" role="menu"></div>
 
   <input type="file" id="import-file" accept=".json" style="display:none">
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
@@ -241,8 +257,8 @@
     }
   </script>
 
-  <script src="utils.js"></script>
-  <script src="store.js"></script>
-  <script src="bookmarks.js?v=18"></script>
+  <script src="utils.js?v=2"></script>
+  <script src="store.js?v=2"></script>
+  <script src="bookmarks.js?v=22"></script>
 </body>
 </html>

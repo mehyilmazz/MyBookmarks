@@ -166,7 +166,8 @@ function normalizeBookmark(item) {
     title,
     platform: detectPlatform(url),
     createdAt,
-    checked: typeof item.checked === 'boolean' ? item.checked : false,
+    checked:  typeof item.checked  === 'boolean' ? item.checked  : false,
+    favorite: typeof item.favorite === 'boolean' ? item.favorite : false,
     note: typeof item.note === 'string' ? item.note.trim() : '',
     tags: sanitizeTags(item.tags),
     thumbnail: (() => {

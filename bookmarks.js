@@ -29,10 +29,11 @@ const BIG_PLAT_ICONS = {
   'Diğer':     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="36" height="36"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`,
 };
 let activeFilters = {
-  search:   '',
-  platform: '',
-  status:   'pending',
-  sort:     'newest'
+  search:        '',
+  platform:      '',
+  status:        'pending',
+  sort:          'newest',
+  onlyFavorites: false
 };
 
 // ─── DOM Referansları ──────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ async function init() {
   await loadState();
   renderAll();
   setupEventListeners();
+  initPanelResize();
 
   // Dışarıdan yapılan değişiklikleri (popup, context menu) yakala
   chrome.storage.onChanged.addListener(async (changes, area) => {
@@ -124,7 +126,8 @@ function getFilteredBase() {
 
 function getFiltered() {
   let list = getFilteredBase();
-  if (activeFilters.platform) list = list.filter(b => b.platform === activeFilters.platform);
+  if (activeFilters.platform)      list = list.filter(b => b.platform === activeFilters.platform);
+  if (activeFilters.onlyFavorites) list = list.filter(b => b.favorite === true);
   return list;
 }
 
@@ -225,6 +228,20 @@ function isDirectImageUrl(url) {
     || /^https?:\/\/i\.imgur\.com\//i.test(url);
 }
 
+/** Tarih-saat etiketini iki satır olarak döndürür (liste görünümü için) */
+function formatListDate(iso) {
+  try {
+    const d   = new Date(iso);
+    const now = new Date();
+    const time = d.toLocaleString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === now.toDateString()) return `<span>Bugün</span><span>${time}</span>`;
+    const yest = new Date(now); yest.setDate(now.getDate() - 1);
+    if (d.toDateString() === yest.toDateString()) return `<span>Dün</span><span>${time}</span>`;
+    const date = d.toLocaleString('tr-TR', { day: '2-digit', month: 'short' });
+    return `<span>${date}</span><span>${time}</span>`;
+  } catch { return ''; }
+}
+
 function buildListItem(bm, index) {
   const platCls  = getPlatformClass(bm.platform);
   const platLogo = isDirectImageUrl(bm.url)
@@ -249,34 +266,21 @@ function buildListItem(bm, index) {
     <div class="bm-li-body">
       <div class="bm-li-title" title="${escapeAttribute(bm.title)}">${escapeHtml(bm.title)}</div>
     </div>
-    <div class="bm-li-actions">
-      <button class="bm-li-act" data-action="open" title="Aç" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
-      </button>
-      <button class="bm-li-act ${bm.checked ? 'bm-li-act--done' : ''}" data-action="toggle" title="${bm.checked ? 'Bekliyor Yap' : 'Tamamlandı İşaretle'}" type="button">
-        ${bm.checked
-          ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 12l6 6L20 6"/></svg>`
-          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 12l6 6L20 6" stroke-dasharray="22" stroke-dashoffset="22" opacity="0.35"/></svg>`
-        }
-      </button>
-      <button class="bm-li-act bm-li-act--del" data-action="delete" title="Sil" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
+    <div class="bm-li-date">${formatListDate(bm.createdAt)}</div>
+    <button class="bm-li-menu-btn" data-action="menu" title="İşlemler" type="button" aria-haspopup="true">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+        <circle cx="12" cy="5"  r="1.8"/>
+        <circle cx="12" cy="12" r="1.8"/>
+        <circle cx="12" cy="19" r="1.8"/>
+      </svg>
+    </button>
   `;
 
   item.addEventListener('click', e => {
-    const actBtn = e.target.closest('.bm-li-act');
-    if (actBtn) {
+    const menuBtn = e.target.closest('.bm-li-menu-btn');
+    if (menuBtn) {
       e.stopPropagation();
-      const action = actBtn.dataset.action;
-      if (action === 'open') {
-        chrome.tabs.create({ url: bm.url });
-      } else if (action === 'toggle') {
-        toggleCheckedAndReselect(bm.id);
-      } else if (action === 'delete') {
-        if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) deleteBookmark(bm.id);
-      }
+      openLiDropdown(bm, menuBtn);
       return;
     }
     if (isSelectMode) {
@@ -697,6 +701,80 @@ function closeAllMenus() {
     m.closest('.bm-card')?.classList.remove('menu-open');
     m.closest('.bm-card')?.querySelector('.btn-card-menu')?.classList.remove('active');
   });
+  closeLiDropdown();
+}
+
+// ─── Liste Kebab Dropdown ─────────────────────────────────────────────────
+
+function closeLiDropdown() {
+  const dd = document.getElementById('li-dropdown');
+  if (!dd) return;
+  dd.style.display = 'none';
+  dd.dataset.bmId = '';
+  // Aktif butonu sıfırla
+  document.querySelectorAll('.bm-li-menu-btn.active')
+    .forEach(b => b.classList.remove('active'));
+}
+
+function openLiDropdown(bm, triggerBtn) {
+  const dd = document.getElementById('li-dropdown');
+  if (!dd) return;
+
+  // Aynı butona tekrar basılırsa kapat (toggle)
+  if (dd.dataset.bmId === bm.id && dd.style.display !== 'none') {
+    closeLiDropdown();
+    return;
+  }
+
+  // Önce diğer menüleri kapat
+  closeAllMenus();
+
+  const toggleLabel    = bm.checked ? 'Bekliyor Yap' : 'Görüldü';
+  const toggleIconPath = bm.checked
+    ? '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+
+  const favLabel    = bm.favorite ? 'Favoriden Çıkar' : 'Favori';
+  const favFill     = bm.favorite ? 'currentColor' : 'none';
+  const favCls      = bm.favorite ? 'li-dd-item--fav li-dd-item--fav-active' : 'li-dd-item--fav';
+  const favIconPath = '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>';
+
+  dd.innerHTML = `
+    <button class="li-dd-item" data-action="open" data-id="${escapeAttribute(bm.id)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+      Aç
+    </button>
+    <button class="li-dd-item ${bm.checked ? 'li-dd-item--done' : ''}" data-action="toggle" data-id="${escapeAttribute(bm.id)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">${toggleIconPath}</svg>
+      ${toggleLabel}
+    </button>
+    <button class="li-dd-item ${favCls}" data-action="favorite" data-id="${escapeAttribute(bm.id)}">
+      <svg viewBox="0 0 24 24" fill="${favFill}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">${favIconPath}</svg>
+      ${favLabel}
+    </button>
+    <div class="li-dd-sep"></div>
+    <button class="li-dd-item li-dd-item--del" data-action="delete" data-id="${escapeAttribute(bm.id)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      Sil
+    </button>
+  `;
+
+  dd.dataset.bmId = bm.id;
+
+  // Konumlandır (fixed — scroll kırpmasından bağımsız)
+  const rect     = triggerBtn.getBoundingClientRect();
+  const ddWidth  = 180;
+  const ddHeight = 165;
+  let left = rect.right - ddWidth;
+  let top  = rect.bottom + 4;
+  if (left < 6)                          left = 6;
+  if (top + ddHeight > window.innerHeight) top = rect.top - ddHeight - 4;
+
+  dd.style.left    = left + 'px';
+  dd.style.top     = top  + 'px';
+  dd.style.display = 'block';
+
+  triggerBtn.classList.add('active');
 }
 
 function bindCardEvents(card, bm) {
@@ -832,7 +910,15 @@ async function toggleCheckedAndReselect(id) {
   if (!state.success) return;
   allBookmarks = state.bookmarks;
   renderAll();
-  showToast(state.bookmark.checked ? 'Tamamlandı olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
+  showToast(state.bookmark.checked ? 'Görüldü olarak işaretlendi.' : 'Tekrar bekliyor olarak işaretlendi.', 'success');
+}
+
+async function toggleFavorite(id) {
+  const state = await BookmarkStore.toggleFavorite(id);
+  if (!state.success) return;
+  allBookmarks = state.bookmarks;
+  renderAll();
+  showToast(state.bookmark.favorite ? '⭐ Favorilere eklendi.' : 'Favorilerden çıkarıldı.', 'success');
 }
 
 async function updateNote(id, note) {
@@ -1003,6 +1089,26 @@ function setupEventListeners() {
     renderPreview(null);
   });
 
+  // Liste kebab dropdown tıklamaları
+  document.getElementById('li-dropdown').addEventListener('click', e => {
+    e.stopPropagation();
+    const ddItem = e.target.closest('.li-dd-item');
+    if (!ddItem) return;
+    const { action, id } = ddItem.dataset;
+    closeLiDropdown();
+    const target = allBookmarks.find(b => b.id === id);
+    if (!target) return;
+    if (action === 'open') {
+      chrome.tabs.create({ url: target.url });
+    } else if (action === 'toggle') {
+      toggleCheckedAndReselect(id);
+    } else if (action === 'favorite') {
+      toggleFavorite(id);
+    } else if (action === 'delete') {
+      if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) deleteBookmark(id);
+    }
+  });
+
   // Global click → menüleri kapat
   document.addEventListener('click', () => { closeAllMenus(); });
 
@@ -1048,6 +1154,16 @@ function setupEventListeners() {
     $('status-filters').querySelectorAll('.fbar-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilters.status = btn.dataset.status ?? '';
+    selectedId = null;
+    resetVisibleCount();
+    renderGrid();
+    renderPreview(null);
+  });
+
+  // Favorilerim filtre butonu
+  $('fav-filter').addEventListener('click', () => {
+    activeFilters.onlyFavorites = !activeFilters.onlyFavorites;
+    $('fav-filter').classList.toggle('active', activeFilters.onlyFavorites);
     selectedId = null;
     resetVisibleCount();
     renderGrid();
@@ -1107,6 +1223,58 @@ function setupEventListeners() {
   $('import-file').addEventListener('change', e => {
     const f = e.target.files[0];
     if (f) { importData(f); e.target.value = ''; }
+  });
+}
+
+// ─── Panel Boyutlandırma ──────────────────────────────────────────────────
+
+const PANEL_WIDTH_KEY = 'panelListWidth';
+const PANEL_MIN_PX    = 220;
+const PANEL_MAX_RATIO = 0.72; // Ekranın max %72'si
+
+function initPanelResize() {
+  const resizer  = document.getElementById('panel-resizer');
+  const appBody  = document.querySelector('.app-body');
+  const panelList = document.getElementById('panel-list');
+  if (!resizer || !appBody || !panelList) return;
+
+  // Kaydedilen genişliği yükle
+  chrome.storage.local.get(PANEL_WIDTH_KEY, (data) => {
+    const saved = data[PANEL_WIDTH_KEY];
+    if (saved && typeof saved === 'number' && saved > PANEL_MIN_PX) {
+      const clamped = Math.min(saved, Math.round(window.innerWidth * PANEL_MAX_RATIO));
+      appBody.style.setProperty('--list-w', clamped + 'px');
+    }
+  });
+
+  let startX = 0;
+  let startWidth = 0;
+
+  function onMouseMove(e) {
+    const delta    = e.clientX - startX;
+    const maxWidth = Math.round(window.innerWidth * PANEL_MAX_RATIO);
+    const newWidth = Math.max(PANEL_MIN_PX, Math.min(startWidth + delta, maxWidth));
+    appBody.style.setProperty('--list-w', newWidth + 'px');
+  }
+
+  function onMouseUp() {
+    resizer.classList.remove('is-dragging');
+    document.body.classList.remove('is-resizing');
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+
+    const finalWidth = Math.round(panelList.getBoundingClientRect().width);
+    chrome.storage.local.set({ [PANEL_WIDTH_KEY]: finalWidth });
+  }
+
+  resizer.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startX     = e.clientX;
+    startWidth = Math.round(panelList.getBoundingClientRect().width);
+    resizer.classList.add('is-dragging');
+    document.body.classList.add('is-resizing');
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   });
 }
 

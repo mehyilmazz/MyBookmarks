@@ -145,6 +145,15 @@
     });
   }
 
+  async function toggleFavorite(id, storageArea) {
+    return mutateState(storageArea, bookmarks => {
+      const bookmark = bookmarks.find(item => item.id === id);
+      if (!bookmark) return { success: false, reason: 'not-found' };
+      bookmark.favorite = !bookmark.favorite;
+      return { success: true, bookmark };
+    });
+  }
+
   async function updateNote(id, note, storageArea) {
     return mutateState(storageArea, bookmarks => {
       const bookmark = bookmarks.find(item => item.id === id);
@@ -267,6 +276,7 @@
     saveBookmark,
     sortBookmarks,
     toggleChecked,
+    toggleFavorite,
     updateNote,
     updateThumbnail
   };
