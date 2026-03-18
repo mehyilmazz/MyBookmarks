@@ -77,7 +77,7 @@ async function init() {
       // Find newly added bookmarks (in next but not in prev) that have no thumbnail
       const prevIds = new Set(prev.map(b => b.id));
       const newBookmarks = next.filter(b => !prevIds.has(b.id) && b.thumbnail === null);
-      for (const id of selectedIds) {
+      for (const id of [...selectedIds]) {
         if (!allBookmarks.find(b => b.id === id)) selectedIds.delete(id);
       }
       resetVisibleCount();
@@ -305,8 +305,7 @@ function renderPreview(bm) {
   if (bm.thumbnail) {
     thumbHTML = `
       <div class="pv-thumb">
-        <img src="${escapeAttribute(bm.thumbnail)}" alt="" loading="lazy"
-             onerror="this.parentElement.innerHTML='<div class=\\'pv-thumb-placeholder pv-thumb-placeholder--${platCls}\\'>${(BIG_PLAT_ICONS[bm.platform] || '').replace(/'/g, "\\'")}</div>'">
+        <img src="${escapeAttribute(bm.thumbnail)}" alt="" loading="lazy" data-plat="${platCls}" data-platform="${escapeAttribute(bm.platform)}">
         <span class="pv-plat-badge pv-plat-badge--${platCls}">${PLAT_ICONS[bm.platform] || ''}${escapeHtml(platLabel)}</span>
       </div>
     `;
@@ -358,6 +357,19 @@ function renderPreview(bm) {
       </button>
     </div>
   `;
+
+  // Wire thumbnail fallback (CSP-safe: no inline event handlers)
+  const thumbImg = DOM.previewCard.querySelector('.pv-thumb img');
+  if (thumbImg) {
+    thumbImg.addEventListener('error', () => {
+      const plat = thumbImg.dataset.platform;
+      const cls  = thumbImg.dataset.plat;
+      const thumb = thumbImg.closest('.pv-thumb');
+      if (thumb) {
+        thumb.innerHTML = `<div class="pv-thumb-placeholder pv-thumb-placeholder--${cls}">${BIG_PLAT_ICONS[plat] || ''}</div>`;
+      }
+    }, { once: true });
+  }
 
   DOM.previewCard.querySelector('[data-action="open"]').addEventListener('click', () => {
     chrome.tabs.create({ url: bm.url });
