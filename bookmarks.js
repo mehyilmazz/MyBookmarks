@@ -71,12 +71,21 @@ async function init() {
   // Dışarıdan yapılan değişiklikleri (popup, context menu) yakala
   chrome.storage.onChanged.addListener(async (changes, area) => {
     if (area === 'local' && changes.bookmarks) {
+      const prev = changes.bookmarks.oldValue || [];
+      const next = changes.bookmarks.newValue || [];
       await loadState();
+      // Find newly added bookmarks (in next but not in prev) that have no thumbnail
+      const prevIds = new Set(prev.map(b => b.id));
+      const newBookmarks = next.filter(b => !prevIds.has(b.id) && b.thumbnail === null);
       for (const id of selectedIds) {
         if (!allBookmarks.find(b => b.id === id)) selectedIds.delete(id);
       }
       resetVisibleCount();
       renderAll();
+      // Fetch thumbnails for new bookmarks (async, non-blocking)
+      for (const bm of newBookmarks) {
+        getThumbnail(bm);
+      }
     }
   });
 
@@ -720,6 +729,7 @@ function setSelectMode(enabled) {
   isSelectMode = enabled;
   DOM.btnSelectMode.classList.toggle('active', enabled);
   DOM.selectControls.style.display = enabled ? 'flex' : 'none';
+  document.querySelector('.panel-list').classList.toggle('select-mode', enabled);
 
   if (!enabled) {
     selectedIds.clear();
@@ -892,6 +902,41 @@ function showToast(msg, type = 'info', ms = 3200) {
   setTimeout(() => toast.remove(), ms);
 }
 
+// ─── Thumbnail ─────────────────────────────────────────────────────────────
+
+async function getThumbnail(bm) {
+  if (bm.platform === 'YouTube') {
+    const videoId = MyBookmarkUtils.extractYouTubeId(bm.url);
+    if (videoId) {
+      const thumbUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      await BookmarkStore.updateThumbnail(bm.id, thumbUrl);
+      // Refresh local cache
+      const state = await BookmarkStore.getState();
+      allBookmarks = state.bookmarks;
+      // If this bookmark is currently selected, refresh preview
+      if (selectedId === bm.id) {
+        const updated = allBookmarks.find(b => b.id === bm.id);
+        if (updated) renderPreview(updated);
+      }
+    }
+    return;
+  }
+
+  // Twitter / Other: fetch og:image via background
+  chrome.runtime.sendMessage({ action: 'fetchOgImage', url: bm.url }, async (response) => {
+    if (chrome.runtime.lastError) return; // background not available (e.g. dev mode)
+    const thumb = response?.thumbnail;
+    if (!thumb) return;
+    await BookmarkStore.updateThumbnail(bm.id, thumb);
+    const state = await BookmarkStore.getState();
+    allBookmarks = state.bookmarks;
+    if (selectedId === bm.id) {
+      const updated = allBookmarks.find(b => b.id === bm.id);
+      if (updated) renderPreview(updated);
+    }
+  });
+}
+
 // ─── Event Listeners ──────────────────────────────────────────────────────
 
 function setupEventListeners() {
@@ -899,8 +944,10 @@ function setupEventListeners() {
   // Arama
   DOM.searchInput.addEventListener('input', () => {
     activeFilters.search = DOM.searchInput.value;
+    selectedId = null;
     resetVisibleCount();
     renderGrid();
+    renderPreview(null);
   });
 
   // Global click → menüleri kapat
@@ -922,8 +969,10 @@ function setupEventListeners() {
   // Sıralama
   DOM.sortSelect.addEventListener('change', () => {
     activeFilters.sort = DOM.sortSelect.value;
+    selectedId = null;
     resetVisibleCount();
     renderGrid();
+    renderPreview(null);
   });
 
   // Platform filtre butonları
@@ -933,8 +982,10 @@ function setupEventListeners() {
     $('platform-filters').querySelectorAll('.fbar-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilters.platform = btn.dataset.platform ?? '';
+    selectedId = null;
     resetVisibleCount();
     renderGrid();
+    renderPreview(null);
   });
 
   // Durum filtre butonları
@@ -944,8 +995,10 @@ function setupEventListeners() {
     $('status-filters').querySelectorAll('.fbar-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeFilters.status = btn.dataset.status ?? '';
+    selectedId = null;
     resetVisibleCount();
     renderGrid();
+    renderPreview(null);
   });
 
   // Seçim modu
