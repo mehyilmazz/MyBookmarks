@@ -2046,3 +2046,216 @@ body.is-resizing {
   background: var(--border);
   margin: 14px 0;
 }
+
+/* ─── Sidebar Toggle Button ────────────────────────────────────────── */
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  margin-right: 8px;
+}
+.sidebar-toggle-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-hover);
+  color: var(--text);
+}
+.sidebar-toggle-btn.is-collapsed {
+  color: var(--text-3);
+}
+
+/* ─── Sidebar Layout ─────────────────────────────────────────────── */
+#sidebar {
+  width: 200px;
+  min-width: 150px;
+  max-width: 350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+#sidebar-resizer {
+  width: 4px;
+  flex-shrink: 0;
+  background: transparent;
+  cursor: col-resize;
+  transition: background 0.15s;
+  position: relative;
+  z-index: 2;
+}
+#sidebar-resizer:hover,
+#sidebar-resizer.is-resizing {
+  background: var(--accent-dim);
+}
+
+.sidebar-header {
+  padding: 14px 14px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+/* ─── Folder List ────────────────────────────────────────────────── */
+.folder-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text-2);
+  font-size: 13px;
+  position: relative;
+  transition: background 0.12s, color 0.12s;
+}
+.folder-item:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.folder-item.is-active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 500;
+}
+.folder-item.drag-over {
+  background: var(--accent-muted);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.folder-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-3);
+}
+.folder-item.is-active .folder-icon {
+  color: var(--accent);
+}
+
+.folder-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-count {
+  font-size: 11px;
+  color: var(--text-3);
+  min-width: 16px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.folder-delete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.12s, color 0.12s;
+}
+.folder-item:hover .folder-delete {
+  display: flex;
+}
+.folder-delete:hover {
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+
+/* ─── New Folder Input ───────────────────────────────────────────── */
+#new-folder-input-row {
+  padding: 6px 10px 2px;
+  flex-shrink: 0;
+}
+
+#new-folder-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 5px 8px;
+  outline: none;
+  font-family: var(--font);
+}
+#new-folder-input:focus {
+  border-color: var(--border-focus);
+}
+#new-folder-input.is-error {
+  border-color: var(--danger);
+  animation: shake 0.3s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.new-folder-error {
+  display: block;
+  font-size: 11px;
+  color: var(--danger);
+  padding: 3px 2px 0;
+}
+
+.new-folder-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 10px 10px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 7px;
+  color: var(--text-3);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.new-folder-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+/* ─── Drag Source ────────────────────────────────────────────────── */
+.bm-row.is-dragging {
+  opacity: 0.45;
+  cursor: grabbing;
+}
