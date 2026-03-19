@@ -274,6 +274,12 @@ function buildListItem(bm, index) {
   ].filter(Boolean).join(' ');
   item.dataset.id = bm.id;
   item.style.animationDelay = `${Math.min(index * 10, 150)}ms`;
+  item.setAttribute('draggable', 'true');
+  item.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', bm.id);
+    item.classList.add('is-dragging');
+  });
+  item.addEventListener('dragend', () => item.classList.remove('is-dragging'));
 
   item.innerHTML = `
     <div class="bm-li-checkbox" aria-hidden="true">
