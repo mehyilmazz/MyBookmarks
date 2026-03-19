@@ -263,20 +263,24 @@
   }
 
   async function removeTagByName(tagName, storageArea) {
+    if (!tagName) return { success: false, reason: 'invalid-tag' };
     return mutateState(storageArea, bookmarks => {
       bookmarks.forEach(bm => {
         const idx = bm.tags.indexOf(tagName);
         if (idx !== -1) bm.tags.splice(idx, 1);
       });
+      return { success: true };
     });
   }
 
   async function moveBookmarkToFolder(id, allFolderNames, targetFolderName, storageArea) {
+    const folderNames = allFolderNames || [];
     return mutateState(storageArea, bookmarks => {
-      const bm = bookmarks.find(b => b.id === id);
-      if (!bm) return { success: false, reason: 'not-found' };
-      bm.tags = bm.tags.filter(t => !allFolderNames.includes(t));
-      if (targetFolderName) bm.tags.push(targetFolderName);
+      const bookmark = bookmarks.find(b => b.id === id);
+      if (!bookmark) return { success: false, reason: 'not-found' };
+      bookmark.tags = bookmark.tags.filter(t => !folderNames.includes(t));
+      const target = typeof targetFolderName === 'string' ? targetFolderName.trim() : '';
+      if (target) bookmark.tags.push(target);
       return { success: true };
     });
   }
