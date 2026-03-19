@@ -47,7 +47,7 @@ Yeni klasör adı için: `inputName.trim().toLowerCase()` mevcut tüm `folder.na
 "Tümü"ne (`targetFolderName = ''`) taşındığında yalnızca 1. adım uygulanır.
 
 ### Klasör Silme
-İki ayrı, sıralı işlem:
+Üç ayrı, sıralı adım:
 1. `BookmarkStore.removeTagByName(folderName, storageArea)` çağrısı (yeni dışa aktarılan fonksiyon, §4.1) — tüm bookmark'lardan bu tag kaldırılır
 2. `saveFolders(updatedList)` — `folders` dizisinden klasör kaldırılır, chrome.storage'a yazılır
 3. Eğer aktif filtre silinen klasörse "Tümü"ne dönülür
@@ -124,7 +124,7 @@ Toggle butonu navbar'a eklenir: `<button id="sidebar-toggle" title="Klasörler">
 - Hedef `<li>`'nin `data-folder-id` okunur
   - `"__all__"` → `targetFolderName = ''`
   - diğer → `folders` listesinde bu ID'li klasörün `name` değeri
-- `SidebarModule.moveToFolder(bookmarkId, targetFolderName)` çağrılır (bu fonksiyon `BookmarkStore.moveBookmarkToFolder` kullanır)
+- `SidebarModule.moveToFolder(bookmarkId, targetFolderName, storageArea)` çağrılır (bu fonksiyon `BookmarkStore.moveBookmarkToFolder` kullanır)
 - `drag-over` sınıfı temizlenir
 - `SidebarModule.renderSidebar(allBookmarks)` ile sidebar sayaçları güncellenir
 - `renderList()` çağrılarak ana liste yeniden render edilir (aksi hâlde taşınan bookmark mevcut klasör filtresinde görünmeye devam eder)
@@ -185,7 +185,7 @@ Bu iki fonksiyon `store.js`'in `return {}` bloğuna eklenir.
 | `renderSidebar(allBookmarks)` | Klasör listesini ve sayaçları günceller |
 | `initResize()` | `#sidebar-resizer` mousedown/mousemove/mouseup |
 | `initCollapse()` | `#sidebar-toggle` click, durumu kaydeder |
-| `getFolderBookmarkCount(folderName, allBookmarks)` | Sayaç hesapla |
+| `getFolderBookmarkCount(folderName, allBookmarks)` | Sayaç hesapla; `folderName === null` ise `allBookmarks.length` döner ("Tümü" toplam sayısı) |
 | `setActiveFolderName(name)` | Aktif klasörü highlight'lar (`null` = Tümü) |
 
 **Yayılan Event:**
@@ -261,7 +261,8 @@ SidebarModule.renderSidebar(allBookmarks);
 - `#sidebar` kapalıyken drop hedefleri görünmez; drop tamamlanamaz; `data-folder-id="__all__"` sentinel "Tümü" için kullanılır
 - Bozuk eski veri (bookmark'ta birden fazla klasör tag'i): `moveBookmarkToFolder` tümünü temizler, `getFolderBookmarkCount` her eşleşen klasörde sayar
 - Yeniden adlandırma kapsam dışı
-- Cross-tab/cross-context folder sync `onChanged.folders` ile ele alınır; `getState()` yeniden çağrılarak güncel bookmarks yüklenir
+- Cross-tab/cross-context folder sync `onChanged.folders` ile ele alınır; `getState()` yeniden çağrılarak güncel bookmarks yüklenir. `deleteFolder` hem `bookmarks` hem `folders` anahtarını değiştirdiğinden her ikisi için de `onChanged` handler tetiklenebilir — bu çift render kabul edilebilir (her render idempotent, fark göze çarpmaz)
+- `crypto.randomUUID()` Chrome extension context'te güvenle kullanılabilir; mevcut `generateId()` (utils.js) ile bilinçli olarak diverge edilmektedir — `sidebar.js` UUID formatına ihtiyaç duymaz, `generateId()` de kullanılabilir; implementer tercih edebilir
 - `BookmarkStore.mutateState` iç fonksiyon olarak kalır; `sidebar.js` yalnızca dışa aktarılan `removeTagByName` ve `moveBookmarkToFolder` fonksiyonlarını kullanır
 - `removeTagByName` ve `moveBookmarkToFolder` büyük-küçük harf duyarlı `indexOf`/`includes` kullanır; bu doğrudur çünkü klasör adları oluşturulurken case-insensitive duplicate kontrolü yapılır (iki farklı case'de aynı ad mevcut olamaz)
 - `sidebarWidth` ve `sidebarCollapsed` storage anahtarları mevcut `panelListWidth` ile aynı flat camelCase konvansiyonunu izler
