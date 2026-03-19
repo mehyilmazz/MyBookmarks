@@ -262,6 +262,25 @@
     });
   }
 
+  async function removeTagByName(tagName, storageArea) {
+    return mutateState(storageArea, bookmarks => {
+      bookmarks.forEach(bm => {
+        const idx = bm.tags.indexOf(tagName);
+        if (idx !== -1) bm.tags.splice(idx, 1);
+      });
+    });
+  }
+
+  async function moveBookmarkToFolder(id, allFolderNames, targetFolderName, storageArea) {
+    return mutateState(storageArea, bookmarks => {
+      const bm = bookmarks.find(b => b.id === id);
+      if (!bm) return { success: false, reason: 'not-found' };
+      bm.tags = bm.tags.filter(t => !allFolderNames.includes(t));
+      if (targetFolderName) bm.tags.push(targetFolderName);
+      return { success: true };
+    });
+  }
+
   return {
     addTag,
     bulkDelete,
@@ -271,8 +290,10 @@
     filterBookmarks,
     getState,
     importBookmarks,
+    moveBookmarkToFolder,
     rebuildTagUsage,
     removeTag,
+    removeTagByName,
     saveBookmark,
     sortBookmarks,
     toggleChecked,
