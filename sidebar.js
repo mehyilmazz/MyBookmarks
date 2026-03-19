@@ -140,8 +140,8 @@ window.SidebarModule = (function () {
     // Silme
     li.querySelector('.folder-delete').addEventListener('click', async e => {
       e.stopPropagation();
-      await deleteFolder(folder.id);
-      // bookmarks.js onChanged chain will re-render sidebar
+      const confirmed = await _confirmDelete(folder.name);
+      if (confirmed) await deleteFolder(folder.id);
     });
 
     // Drag over/drop
@@ -207,6 +207,37 @@ window.SidebarModule = (function () {
     });
   }
 
+  // ─── Onay Diyaloğu ────────────────────────────────────────────────
+
+  function _confirmDelete(folderName) {
+    return new Promise(resolve => {
+      const esc = MyBookmarkUtils.escapeHtml;
+      const overlay = document.createElement('div');
+      overlay.className = 'sidebar-confirm-overlay';
+      overlay.innerHTML = `
+        <div class="sidebar-confirm-box">
+          <p class="sidebar-confirm-msg"><strong>${esc(folderName)}</strong> klasörü silinsin mi?</p>
+          <p class="sidebar-confirm-sub">Yer imleri silinmez, yalnızca klasör etiketi kaldırılır.</p>
+          <div class="sidebar-confirm-actions">
+            <button class="sidebar-confirm-cancel">İptal</button>
+            <button class="sidebar-confirm-ok">Sil</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      function cleanup(result) {
+        document.body.removeChild(overlay);
+        resolve(result);
+      }
+
+      overlay.addEventListener('click', e => { if (e.target === overlay) cleanup(false); });
+      overlay.querySelector('.sidebar-confirm-cancel').addEventListener('click', () => cleanup(false));
+      overlay.querySelector('.sidebar-confirm-ok').addEventListener('click', () => cleanup(true));
+      overlay.querySelector('.sidebar-confirm-cancel').focus();
+    });
+  }
+
   // ─── Yeni Klasör Input ────────────────────────────────────────────
 
   function _initNewFolderInput() {
@@ -246,6 +277,15 @@ window.SidebarModule = (function () {
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); doCreate(); }
       if (e.key === 'Escape') { inputRow.hidden = true; }
+    });
+
+    document.addEventListener('mousedown', e => {
+      if (inputRow.hidden) return;
+      if (!inputRow.contains(e.target) && e.target !== btn) {
+        inputRow.hidden = true;
+        if (errorEl) errorEl.hidden = true;
+        input.classList.remove('is-error');
+      }
     });
   }
 
