@@ -23,6 +23,12 @@
       </div>
     </div>
 
+    <button id="sidebar-toggle" class="sidebar-toggle-btn" title="Klasörleri Göster/Gizle">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+        <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+      </svg>
+    </button>
+
     <div class="header-search">
       <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
@@ -128,6 +134,31 @@
 
   <!-- ═══════════════════ APP BODY ═══════════════════ -->
   <div class="app-body">
+
+    <!-- ── Sidebar: Klasörler ── -->
+    <div id="sidebar">
+      <div class="sidebar-header">Klasörler</div>
+      <ul class="folder-list">
+        <li class="folder-item is-active" data-folder-id="__all__">
+          <span class="folder-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
+          </span>
+          <span class="folder-name">Tümü</span>
+          <span class="folder-count"></span>
+        </li>
+      </ul>
+      <div id="new-folder-input-row" hidden>
+        <input id="new-folder-input" type="text" maxlength="30" placeholder="Klasör adı…" autocomplete="off">
+        <span class="new-folder-error" id="new-folder-error" hidden>Bu isim zaten var</span>
+      </div>
+      <button id="new-folder-btn" class="new-folder-btn">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+        Yeni Klasör
+      </button>
+    </div>
+
+    <!-- ── Sidebar Resize Tutacağı ── -->
+    <div id="sidebar-resizer" class="sidebar-resizer"></div>
 
     <!-- ── Sol Panel: MyBookmarks Listesi ── -->
     <div class="panel-list" id="panel-list">
@@ -259,6 +290,7 @@
 
   <script src="utils.js?v=2"></script>
   <script src="store.js?v=2"></script>
+  <script src="sidebar.js?v=1"></script>
   <script src="bookmarks.js?v=22"></script>
 </body>
 </html>
