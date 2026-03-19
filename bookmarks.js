@@ -33,7 +33,8 @@ let activeFilters = {
   platform:      '',
   status:        'pending',
   sort:          'newest',
-  onlyFavorites: false
+  onlyFavorites: false,
+  folder:        null
 };
 
 // ─── DOM Referansları ──────────────────────────────────────────────────────
@@ -70,6 +71,14 @@ async function init() {
   renderAll();
   setupEventListeners();
   initPanelResize();
+  await SidebarModule.init();
+  SidebarModule.renderSidebar(allBookmarks);
+
+  document.addEventListener('folder-select', e => {
+    activeFilters.folder = e.detail.folderName;
+    visibleCount = LIST_PAGE_SIZE;
+    renderAll();
+  });
 
   // Dışarıdan yapılan değişiklikleri (popup, context menu) yakala
   chrome.storage.onChanged.addListener(async (changes, area) => {
@@ -77,6 +86,7 @@ async function init() {
       const prev = changes.bookmarks.oldValue || [];
       const next = changes.bookmarks.newValue || [];
       await loadState();
+      SidebarModule.renderSidebar(allBookmarks);
       // Find newly added bookmarks (in next but not in prev) that have no thumbnail
       const prevIds = new Set(prev.map(b => b.id));
       const newBookmarks = next.filter(b => !prevIds.has(b.id) && b.thumbnail === null);
@@ -92,6 +102,10 @@ async function init() {
         }
       })();
     }
+    if (area === 'local' && changes.folders) {
+      await SidebarModule.loadFolders();
+      SidebarModule.renderSidebar(allBookmarks);
+    }
   });
 
   // Sekme tekrar aktif olduğunda storage'dan taze veriyi yükle
@@ -100,6 +114,7 @@ async function init() {
     await loadState();
     resetVisibleCount();
     renderAll();
+    SidebarModule.renderSidebar(allBookmarks);
   });
 }
 
@@ -110,6 +125,7 @@ function resetVisibleCount() {
 async function loadState() {
   const state = await BookmarkStore.getState();
   allBookmarks = state.bookmarks;
+  window.__allBookmarks__ = allBookmarks;
 }
 
 // ─── Filtreleme & Sıralama ────────────────────────────────────────────────
@@ -128,6 +144,7 @@ function getFiltered() {
   let list = getFilteredBase();
   if (activeFilters.platform)      list = list.filter(b => b.platform === activeFilters.platform);
   if (activeFilters.onlyFavorites) list = list.filter(b => b.favorite === true);
+  if (activeFilters.folder)        list = list.filter(b => b.tags.includes(activeFilters.folder));
   return list;
 }
 
@@ -629,6 +646,12 @@ function buildTableRow(bm, index) {
   row.className = ['bm-row', bm.checked ? 'is-done' : '', selectedIds.has(bm.id) ? 'is-selected' : ''].filter(Boolean).join(' ');
   row.dataset.id = bm.id;
   row.style.animationDelay = `${Math.min(index * 15, 200)}ms`;
+  row.setAttribute('draggable', 'true');
+  row.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', bm.id);
+    row.classList.add('is-dragging');
+  });
+  row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
 
   row.innerHTML = `
     <td class="col-title">
