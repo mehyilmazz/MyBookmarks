@@ -1,10 +1,10 @@
 /* =====================================================================
-   popup.css — MyBookmark · Koyu Tema · Inter
+   popup.css — MyBookmark · Koyu Tema
    ===================================================================== */
 
 /* ─── Değişkenler ──────────────────────────────────────────────────── */
 :root {
-  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font: 'Segoe UI', 'Aptos', 'Trebuchet MS', sans-serif;
 
   /* Arka plan katmanları */
   --bg:        #0c0f16;

@@ -32,16 +32,18 @@ async function extractThumbnailFromTab(tabId) {
     const results = await chrome.scripting.executeScript({
       target: { tabId },
       func: () => {
-        const og = document.querySelector('meta[property="og:image"]');
-        if (og?.content) return og.content;
-        const tw = document.querySelector('meta[name="twitter:image"]');
-        if (tw?.content) return tw.content;
-        // Tweet'teki resim doğrudan DOM'dan
+        // Twitter/X: DOM'daki gerçek tweet fotoğrafını önce dene (og:image genellikle tanıtım görseli)
         const tweetImg = document.querySelector(
           '[data-testid="tweetPhoto"] img, [data-testid="tweet-img"] img, ' +
           '[data-testid="card.layoutSmall.media"] img, [data-testid="card.layoutLarge.media"] img'
         );
         if (tweetImg?.src?.includes('pbs.twimg.com')) return tweetImg.src;
+
+        // og:image / twitter:image — abs.twimg.com Twitter branding görsellerini reddet
+        const og = document.querySelector('meta[property="og:image"]');
+        if (og?.content && !og.content.includes('abs.twimg.com')) return og.content;
+        const tw = document.querySelector('meta[name="twitter:image"]');
+        if (tw?.content && !tw.content.includes('abs.twimg.com')) return tw.content;
         return null;
       }
     });
@@ -106,7 +108,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
              || html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
              || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
       const raw = m ? m[1].trim() : null;
-      const thumb = raw && raw.length <= 2048 ? raw : null;
+      // abs.twimg.com: Twitter'ın statik branding asset'leri (tanıtım görselleri) — gerçek tweet medyası değil
+      const thumb = raw && raw.length <= 2048 && !raw.includes('abs.twimg.com') ? raw : null;
       sendResponse({ thumbnail: thumb });
     })
     .catch(() => sendResponse({ thumbnail: null }));
