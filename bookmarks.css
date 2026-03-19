@@ -2168,8 +2168,13 @@ body.is-resizing {
   top: 7px;
   bottom: 7px;
   width: 3px;
-  background: var(--border-strong);
+  background: var(--accent);
+  opacity: 0.5;
   border-radius: 0 3px 3px 0;
+}
+.sidebar-header.is-bookmark-active:not(.is-active) .sidebar-header-icon {
+  color: var(--accent);
+  opacity: 0.7;
 }
 .sidebar-header-icon {
   display: flex;
@@ -2263,8 +2268,29 @@ body.is-resizing {
   top: 7px;
   bottom: 7px;
   width: 3px;
-  background: var(--border-strong);
+  background: var(--accent);
+  opacity: 0.5;
   border-radius: 0 3px 3px 0;
+}
+.folder-item.is-bookmark-active:not(.is-active) .folder-icon {
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+/* Drag-to-reorder: drop target indicator */
+.folder-item.drag-over-sort {
+  background: rgba(217,119,87,0.08);
+  outline: 1.5px dashed var(--border-strong);
+  outline-offset: -2px;
+}
+.folder-item.is-folder-dragging {
+  opacity: 0.4;
+}
+.folder-item {
+  cursor: grab;
+}
+.folder-item:active {
+  cursor: grabbing;
 }
 
 .folder-icon {

@@ -5,6 +5,7 @@ window.SidebarModule = (function () {
   let _folders = [];
   let _activeFolderName = null;
   let _storageArea = null;
+  let _draggingFolderId = null;
 
   function _getStorage() {
     if (_storageArea) return _storageArea;
@@ -118,6 +119,17 @@ window.SidebarModule = (function () {
     setActiveFolderName(_activeFolderName);
   }
 
+  async function reorderFolder(draggedId, targetId) {
+    const from = _folders.findIndex(f => f.id === draggedId);
+    const to   = _folders.findIndex(f => f.id === targetId);
+    if (from === -1 || to === -1 || from === to) return;
+    const next = [..._folders];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    await saveFolders(next);
+    renderSidebar(window.__allBookmarks__ || []);
+  }
+
   function _buildFolderItem(folder, allBookmarks) {
     const li = document.createElement('li');
     li.className = 'folder-item';
@@ -157,18 +169,44 @@ window.SidebarModule = (function () {
       if (confirmed) await deleteFolder(folder.id);
     });
 
-    // Drag over/drop
-    li.addEventListener('dragover', e => { e.preventDefault(); li.classList.add('drag-over'); });
+    // Sürükleme — sıralama
+    li.setAttribute('draggable', 'true');
+    li.addEventListener('dragstart', e => {
+      if (e.target.closest('.folder-delete')) { e.preventDefault(); return; }
+      _draggingFolderId = folder.id;
+      e.dataTransfer.effectAllowed = 'move';
+      requestAnimationFrame(() => li.classList.add('is-folder-dragging'));
+    });
+    li.addEventListener('dragend', () => {
+      _draggingFolderId = null;
+      li.classList.remove('is-folder-dragging');
+      document.querySelectorAll('.drag-over-sort').forEach(el => el.classList.remove('drag-over-sort'));
+    });
+
+    // Drag over/drop — sıralama + bookmark bırakma
+    li.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (_draggingFolderId && _draggingFolderId !== folder.id) {
+        li.classList.add('drag-over-sort');
+      } else if (!_draggingFolderId) {
+        li.classList.add('drag-over');
+      }
+    });
     li.addEventListener('dragleave', e => {
-      if (!li.contains(e.relatedTarget)) li.classList.remove('drag-over');
+      if (!li.contains(e.relatedTarget)) {
+        li.classList.remove('drag-over', 'drag-over-sort');
+      }
     });
     li.addEventListener('drop', async e => {
       e.preventDefault();
-      li.classList.remove('drag-over');
+      li.classList.remove('drag-over', 'drag-over-sort');
+      if (_draggingFolderId) {
+        if (_draggingFolderId !== folder.id) await reorderFolder(_draggingFolderId, folder.id);
+        return;
+      }
       const bookmarkId = e.dataTransfer.getData('text/plain');
       if (!bookmarkId) return;
       await moveToFolder(bookmarkId, folder.name, _storageArea);
-      // onChanged.bookmarks in bookmarks.js handles re-render
     });
 
     return li;
@@ -315,11 +353,16 @@ window.SidebarModule = (function () {
       document.dispatchEvent(new CustomEvent('folder-select', { detail: { folderName: null } }));
     });
 
-    tumuItem.addEventListener('dragover', e => { e.preventDefault(); tumuItem.classList.add('drag-over'); });
+    tumuItem.addEventListener('dragover', e => {
+      if (_draggingFolderId) return;
+      e.preventDefault();
+      tumuItem.classList.add('drag-over');
+    });
     tumuItem.addEventListener('dragleave', e => {
       if (!tumuItem.contains(e.relatedTarget)) tumuItem.classList.remove('drag-over');
     });
     tumuItem.addEventListener('drop', async e => {
+      if (_draggingFolderId) return;
       e.preventDefault();
       tumuItem.classList.remove('drag-over');
       const bookmarkId = e.dataTransfer.getData('text/plain');
