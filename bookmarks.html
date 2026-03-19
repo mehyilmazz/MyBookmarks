@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="bookmarks.css?v=25">
+  <link rel="stylesheet" href="bookmarks.css?v=26">
 </head>
 <body>
 
@@ -139,26 +139,19 @@
 
     <!-- ── Sidebar: Klasörler ── -->
     <div id="sidebar">
-      <div class="sidebar-header">
+      <div class="sidebar-header" id="sidebar-tumu-item" data-folder-id="__all__">
         <span class="sidebar-header-icon">
           <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.19a2 2 0 0 1 1.45.63l.9.94H14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3.87z"/></svg>
         </span>
-        <span class="sidebar-header-label">Klasörler</span>
+        <span class="sidebar-header-label">Tümü</span>
+        <span class="folder-count" id="sidebar-tumu-count"></span>
         <button id="new-folder-btn" class="new-folder-add-btn" title="Yeni Klasör" type="button">
           <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
           </svg>
         </button>
       </div>
-      <ul class="folder-list">
-        <li class="folder-item is-active" data-folder-id="__all__">
-          <span class="folder-icon">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg>
-          </span>
-          <span class="folder-name">Tümü</span>
-          <span class="folder-count"></span>
-        </li>
-      </ul>
+      <ul class="folder-list"></ul>
       <div id="new-folder-input-row" hidden>
         <input id="new-folder-input" type="text" maxlength="30" placeholder="Klasör adı…" autocomplete="off">
         <span class="new-folder-error" id="new-folder-error" hidden>Bu isim zaten var</span>
@@ -298,7 +291,7 @@
 
   <script src="utils.js?v=2"></script>
   <script src="store.js?v=3"></script>
-  <script src="sidebar.js?v=3"></script>
-  <script src="bookmarks.js?v=24"></script>
+  <script src="sidebar.js?v=4"></script>
+  <script src="bookmarks.js?v=25"></script>
 </body>
 </html>

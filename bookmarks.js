@@ -344,6 +344,7 @@ function selectBookmark(id) {
   });
   const bm = allBookmarks.find(b => b.id === id);
   renderPreview(bm || null);
+  SidebarModule.highlightFolderForBookmark(bm || null);
 }
 
 function renderPreview(bm) {

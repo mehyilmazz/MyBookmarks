@@ -73,14 +73,27 @@ window.SidebarModule = (function () {
 
   function setActiveFolderName(name) {
     _activeFolderName = name;
+    const tumuHeader = document.getElementById('sidebar-tumu-item');
+    if (tumuHeader) tumuHeader.classList.toggle('is-active', name === null);
     document.querySelectorAll('.folder-item').forEach(li => {
-      const fid = li.dataset.folderId;
-      if (fid === '__all__') {
-        li.classList.toggle('is-active', name === null);
-      } else {
-        const folder = _folders.find(f => f.id === fid);
-        li.classList.toggle('is-active', folder ? folder.name === name : false);
-      }
+      const folder = _folders.find(f => f.id === li.dataset.folderId);
+      li.classList.toggle('is-active', folder ? folder.name === name : false);
+    });
+  }
+
+  function highlightFolderForBookmark(bm) {
+    document.querySelectorAll('.folder-item.is-bookmark-active').forEach(el => el.classList.remove('is-bookmark-active'));
+    const tumuHeader = document.getElementById('sidebar-tumu-item');
+    if (tumuHeader) tumuHeader.classList.remove('is-bookmark-active');
+    if (!bm) return;
+    const bmFolderNames = new Set((bm.tags || []).filter(t => _folders.some(f => f.name === t)));
+    if (bmFolderNames.size === 0) {
+      if (tumuHeader) tumuHeader.classList.add('is-bookmark-active');
+      return;
+    }
+    document.querySelectorAll('.folder-item').forEach(li => {
+      const folder = _folders.find(f => f.id === li.dataset.folderId);
+      if (folder && bmFolderNames.has(folder.name)) li.classList.add('is-bookmark-active');
     });
   }
 
@@ -88,12 +101,12 @@ window.SidebarModule = (function () {
     const list = document.querySelector('.folder-list');
     if (!list) return;
 
-    // Tümü sayacı
-    const allCountEl = list.querySelector('[data-folder-id="__all__"] .folder-count');
-    if (allCountEl) allCountEl.textContent = getFolderBookmarkCount(null, allBookmarks);
+    // Header Tümü sayacı
+    const tumuCountEl = document.getElementById('sidebar-tumu-count');
+    if (tumuCountEl) tumuCountEl.textContent = getFolderBookmarkCount(null, allBookmarks);
 
-    // Dinamik klasör item'larını temizle
-    list.querySelectorAll('.folder-item:not([data-folder-id="__all__"])').forEach(el => el.remove());
+    // Klasör item'larını temizle
+    list.querySelectorAll('.folder-item').forEach(el => el.remove());
 
     // Her klasör için li oluştur
     _folders.forEach(folder => {
@@ -295,7 +308,8 @@ window.SidebarModule = (function () {
     const tumuItem = document.querySelector('[data-folder-id="__all__"]');
     if (!tumuItem) return;
 
-    tumuItem.addEventListener('click', () => {
+    tumuItem.addEventListener('click', e => {
+      if (e.target.closest('#new-folder-btn')) return;
       _activeFolderName = null;
       setActiveFolderName(null);
       document.dispatchEvent(new CustomEvent('folder-select', { detail: { folderName: null } }));
@@ -354,5 +368,6 @@ window.SidebarModule = (function () {
     moveToFolder,
     getFolderBookmarkCount,
     setActiveFolderName,
+    highlightFolderForBookmark,
   };
 })();
