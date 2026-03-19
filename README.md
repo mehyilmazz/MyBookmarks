@@ -1,141 +1,204 @@
-# MyBookmark
+# MyBookmark — Daha Sonra Kontrol Et
 
-> Hizli, hafif ve sik bir Chrome eklentisi — istedigin sayfayi tek tikla kaydet, platformlara gore duzenle, takip et.
+> Twitter/X ve YouTube içeriklerini tek tıkla kaydet, güçlü arşivde yönet.
 
-![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)
-![Manifest V3](https://img.shields.io/badge/Manifest-V3-brightgreen)
-![License](https://img.shields.io/badge/License-MIT-blue)
+Bir Chrome uzantısı — framework yok, bağımlılık yok, tamamen yerel depolama.
 
 ---
 
-## Ekran Goruntuleri
+## Özellikler
 
-| Popup | Arsiv — Liste | Arsiv — Feed |
-|-------|--------------|--------------|
-| Aktif sekmeyi tek tikla kaydet | Platform bazli 3 tablo (Twitter, YouTube, Diger) | Twitter benzeri, ortalanmis feed kartlari |
+### 🔖 Hızlı Kaydetme
+- Araç çubuğu popup'u ile aktif sekmeyi tek tıkla kaydet
+- Sağ tık → "Daha sonra kontrol için kaydet" (sayfa, link, resim, video)
+- Otomatik platform tespiti: Twitter/X, YouTube, Diğer
+- Twitter/X ve YouTube içerikleri için thumbnail otomatik çekilir
+
+### 📚 Arşiv Sayfası
+- **3 bölmeli düzen:** Klasör kenar çubuğu · Kayıt listesi · Önizleme paneli
+- Tüm bölme genişlikleri sürükle-bırak ile yeniden boyutlandırılabilir
+- Liste ve Feed görünüm modları
+- Koyu tema
+
+### 🗂️ Klasör Sistemi (Etiket Tabanlı)
+- Klasör oluştur / sil (onay diyaloğu ile)
+- Kayıtları klasöre sürükle-bırak ile taşı
+- Klasörleri sürükle-bırak ile yeniden sırala
+- Seçilen kayıt hangi klasördeyse sidebar'da otomatik vurgulanır
+- Sidebar gizlenebilir ve genişliği değiştirilebilir
+
+### 🔍 Filtreleme & Arama
+- Platform filtresi: Twitter/X, YouTube, Diğer
+- Durum filtresi: Bekleyen / Tamamlanan
+- Favoriler filtresi ⭐
+- Anlık tam metin arama (başlık, URL, not, etiket)
+- Sıralama: En Yeni, En Eski, Platforma Göre, Bekleyenler Önce, A→Z
+
+### ✏️ Kayıt Yönetimi
+- Satır içi not ve etiket (tag) ekleme
+- Görüldü olarak işaretleme
+- Favori ekleme / çıkarma
+- Toplu seçim: Tümünü seç, Görüldü yap, Dışa aktar, Sil
+
+### 📤 İçe / Dışa Aktarma
+- JSON formatında dışa aktar (tümü veya seçilenler)
+- JSON dosyasından içe aktar
 
 ---
 
-## Ozellikler
+## Ekran Görüntüleri
+
+### Arşiv Sayfası
+![Arşiv Sayfası](docs/screenshots/archive.png)
 
 ### Popup
-- **Tek tikla kaydet** — aktif sekmeyi aninda arsivle
-- Platform otomatik algilama: X/Twitter · YouTube · Diger
-- Etiket (tag) destegi ile kayit organizasyonu
-- Daha once kaydedilmisse uyari gosterir
+![Popup](docs/screenshots/popup.png)
 
-### Arsiv Sayfasi (`bookmarks.html`)
-- **Liste gorunumu** — platform bolumlerine ayrilmis tablolar (Twitter + YouTube yan yana, Diger altta)
-- **Feed gorunumu** — Twitter benzeri kart akisi; YouTube videolari icin otomatik thumbnail
-- Bekleyen / Tamamlanan filtresi, platform filtresi, arama, siralama
-- Silme, tamamlandi isaretleme, toplu islemler
-- JSON ile disa/ice aktarma
-
----
-
-## Proje Yapisi
-
-```
-MyBookmark/
-├── manifest.json        # Chrome Manifest V3
-├── popup.html           # Eklenti popup'i
-├── popup.css            # Popup stilleri
-├── popup.js             # Popup mantigi
-├── bookmarks.html       # Tam ekran arsiv sayfasi
-├── bookmarks.css        # Arsiv stilleri
-├── bookmarks.js         # Arsiv mantigi
-├── utils.js             # Ortak yardimci fonksiyonlar
-├── background.js        # Service worker (context menu destegi)
-└── icons/               # Eklenti ikonlari
-```
+### Klasör Sistemi
+![Klasör Sistemi](docs/screenshots/folders.png)
 
 ---
 
 ## Kurulum
 
-### Chrome Gelistirici Modu
+Chrome Web Store'a henüz yüklenmedi. Geliştirici moduyla yükleyin:
 
-1. Bu repoyu klonlayin:
-   ```bash
-   git clone https://github.com/mehyilmazz/MyBookmarks.git
-   ```
+### 1. Depoyu indirin
 
-2. Chrome'da `chrome://extensions/` adresini acin
+```bash
+git clone https://github.com/mehyilmazz/MyBookmarks.git
+```
 
-3. Sag ustten **"Gelistirici modu"**nu aktif edin
+veya sağ üstteki **Code → Download ZIP** ile indirip çıkarın.
 
-4. **"Paketlenmemis oge yukle"** butonuna tiklayin
+### 2. Chrome'da Geliştirici Modunu Açın
 
-5. Klonladiginiz klasoru secin
+1. Chrome adres çubuğuna `chrome://extensions` yazın
+2. Sağ üst köşedeki **"Geliştirici modu"** düğmesini açın
 
-6. Arac cubugunda **MyBookmark** ikonu gorunur — hazir!
+### 3. Uzantıyı Yükleyin
+
+1. **"Paketlenmemiş öğe yükle"** butonuna tıklayın
+2. İndirdiğiniz `MyBookmarks/` klasörünü seçin
+3. Araç çubuğunda **MyBookmark** ikonu belirir
 
 ---
 
-## Teknolojiler
+## Kullanım
+
+### Kayıt Ekleme
+
+**Popup ile:**
+1. Araç çubuğundaki 🔖 ikonuna tıklayın
+2. Başlık/not ekleyip **"Kaydet"** butonuna basın
+
+**Sağ Tık Menüsü ile:**
+- Herhangi bir sayfada: Sağ tık → **"Daha sonra kontrol için kaydet"**
+- Bir link üzerinde: Sağ tık → **"Bu linki daha sonra kontrol için kaydet"**
+
+### Arşivi Açma
+
+- Popup'ta **"Arşiv"** butonuna tıklayın
+- veya `chrome://extensions` → MyBookmark → **"Seçenekler"**
+
+### Klasör Kullanımı
+
+| İşlem | Nasıl Yapılır |
+|---|---|
+| Yeni klasör | Sidebar başlığındaki `+` ikonuna tıkla → ad yaz → Enter |
+| Klasöre taşı | Liste öğesini sürükleyip klasörün üzerine bırak |
+| Klasör sıralama | Klasörü yukarı/aşağı sürükle |
+| Klasör sil | Klasörün üzerine gel → 🗑️ → Onayla |
+| İptal | Escape tuşu veya dışarı tıkla |
+
+### Filtreler
+
+Filter çubuğundan:
+- **Platform:** Twitter, YouTube, Diğer
+- **Durum:** Bekleyen, Tamamlanan
+- **⭐ Favorilerim:** Yalnızca favorileri göster
+- **☰ Sidebar:** Klasör panelini gizle / göster
+
+---
+
+## Geliştirici Ortamı
+
+### Önizleme (Uzantı Yüklemeden)
+
+```bash
+# Python 3 gerektir
+python -m http.server 3000
+# Tarayıcıda aç: http://localhost:3000/bookmarks.html
+```
+
+`chrome.*` API'leri yoksa `localStorage` mock'u otomatik devreye girer.
+
+### Testleri Çalıştırma
+
+```bash
+node tests/run-tests.js
+```
+
+---
+
+## Teknoloji
 
 | Katman | Teknoloji |
-|--------|-----------|
-| Platform | Chrome Extension Manifest V3 |
+|---|---|
+| Uzantı API | Chrome Manifest V3 |
 | Depolama | `chrome.storage.local` |
-| UI | Vanilla HTML · CSS · JavaScript |
-| Tema | Koyu tema (Claude+ renk paleti) |
-| Font | Inter (Google Fonts) |
+| Arka Plan | Service Worker |
+| UI | Vanilla JavaScript — sıfır bağımlılık |
+| Stil | Saf CSS (değişkenler, koyu tema) |
+| Yazı Tipi | Segoe UI / Aptos / Trebuchet MS |
+| Sürükle-Bırak | HTML5 Drag & Drop API |
+| Yeniden Boyutlandırma | Mouse Events |
 
 ---
 
-## Kullanim
+## Proje Yapısı
 
-### Sayfa Kaydetme
-1. Kaydetmek istedigin sayfada **MyBookmark** ikonuna tikla
-2. Istege bagli etiket ekle
-3. **Kaydet** butonuna bas
-
-### Arsivi Goruntuleme
-- Popup'taki **Arsiv** butonuna tikla
-- veya `chrome-extension://<ID>/bookmarks.html` adresini ac
-
-### Filtreleme
-- **Tumu / Twitter / YouTube / Diger** — platforma gore filtrele
-- **Bekleyen / Tamamlanan** — duruma gore filtrele
-- Ust arama cubuguyla baslik, URL veya etiket ile ara
-
-### Gorunum Degistirme
-- **Liste** — platform tablolariyla kompakt gorunum
-- **Feed** — YouTube thumbnail'li, Twitter benzeri kart akisi
+```
+MyBookmarks/
+├── manifest.json            # Chrome uzantısı tanım dosyası (V3)
+├── background.js            # Service Worker — sağ tık menüsü, thumbnail
+├── popup.html/css/js        # Araç çubuğu popup arayüzü
+├── bookmarks.html           # Arşiv sayfası (ana UI)
+├── bookmarks.css            # Tüm stiller — koyu tema
+├── bookmarks.js             # Arşiv sayfası mantığı
+├── sidebar.js               # Klasör kenar çubuğu modülü
+├── store.js                 # Veri katmanı — chrome.storage CRUD
+├── utils.js                 # Yardımcı fonksiyonlar
+├── icons/                   # Uzantı ikonları (16/32/48/128 px)
+└── tests/
+    └── run-tests.js         # Node.js birim testleri
+```
 
 ---
 
-## Kisayollar
+## Veri Modeli
 
-| Kisayol | Islev |
-|---------|-------|
-| `/` | Arama kutusuna odaklan |
-| `Esc` | Menu kapat / secim modundan cik |
+Her kayıt `chrome.storage.local` içinde şu yapıda tutulur:
 
----
+```json
+{
+  "id": "abc123",
+  "url": "https://x.com/user/status/...",
+  "title": "Tweet veya video başlığı",
+  "platform": "X/Twitter",
+  "createdAt": "2026-03-19T10:00:00.000Z",
+  "checked": false,
+  "favorite": false,
+  "note": "İsteğe bağlı not",
+  "tags": ["klasor-adi", "etiket"],
+  "thumbnail": "https://..."
+}
+```
 
-## Disa / Ice Aktarma
-
-- **Disa Aktar** — tum kayitlari `mybookmark-YYYY-MM-DD.json` olarak indir
-- **Ice Aktar** — daha once disa aktarilan JSON dosyasini yukle (tekrar kayitlar atlanir)
-
----
-
-## Izinler
-
-| Izin | Neden |
-|------|-------|
-| `storage` | Bookmark verilerini yerel olarak saklamak icin |
-| `tabs` | Aktif sekmenin URL ve basligini okumak icin |
-| `contextMenus` | Sag tik menusuyle hizli kayit icin |
+Klasörler ayrı bir `folders` anahtarında saklanır. Klasör sistemi **etiket tabanlıdır** — bir klasörün içeriği, o klasörün adını `tags[]` dizisinde bulunduran kayıtlardır.
 
 ---
 
 ## Lisans
 
-MIT License — dilediginiz gibi kullanabilir, degistirebilir ve dagitabilirsiniz.
-
----
-
-Made with love · [GitHub](https://github.com/mehyilmazz/MyBookmarks)
+MIT © 2026
